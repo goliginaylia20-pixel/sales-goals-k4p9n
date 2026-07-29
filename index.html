@@ -191,6 +191,11 @@
   .morebtn{width:100%;margin-top:10px;border:0;cursor:pointer;font:inherit;font-size:13.5px;font-weight:700;
     color:#5B54A8;background:rgba(120,110,255,.10);padding:11px;border-radius:12px}
 
+  .prepay{margin-top:7px;font-size:12.5px;line-height:1.45;color:#3d2f7a;background:rgba(120,110,255,.09);
+    border-radius:11px;padding:8px 11px}
+  .prepay b{font-weight:800}
+  .prepay[hidden]{display:none}
+
 </style>
 </head>
 <body>
@@ -313,6 +318,7 @@
       <div class="k">Места · выручка</div>
       <div class="v num" id="revA">0 ₽</div>
       <div class="goal">цель-оптимум ≈ <b id="potA">—</b></div>
+      <div class="prepay" id="prepayA" hidden></div>
     </div>
     <div class="goalbar"><div class="gb-track"><div class="gb-fill" id="fillA"></div>
       <i class="tick" id="tAmin"></i><i class="tick" id="tAopt"></i><i class="tick" id="tAmax"></i></div></div>
@@ -490,9 +496,10 @@ function renderStream(x,places,gross,active){
  tierCard("tier"+x+"max","t"+x+"max",S2.max,places);
  const m=msgPlaces(places);$("msg"+x).textContent=m.msg;$("msg"+x).classList.toggle("win",m.win);
  if(active){
+   const started=new Date()>=new Date(S2A_START+"T00:00:00");
    const ds=daysTo(S2A_START), need=Math.max(S2.opt-places,0);
    let p;
-   if(ds>0) p="Старт продаж <b>29 июля</b> (через "+ds+" дн.) · цель-оптимум "+S2.opt+" мест.";
+   if(!started) p="Старт продаж <b>29 июля</b> (через "+ds+" дн.) · цель-оптимум "+S2.opt+" мест.";
    else if(need===0) p="Продажи идут · оптимум взят 🎉";
    else p="Продажи идут · до оптимума ещё <b>"+need+" мест</b>.";
    $("pace"+x).innerHTML=p;
@@ -553,6 +560,15 @@ document.addEventListener("input",e=>{const el=e.target;if(el.id&&el.id.indexOf(
    Ручной ввод остаётся рабочим, но при следующей загрузке цифры перезапишутся. */
 const FEED="https://141-98-235-13.sslip.io/sales/sales-7fb6f2769140.json";
 function stamp(t){const el=$("syncline");if(!el)return;el.textContent=t;}
+function renderPrepay(d){
+ const el=$("prepayA"); if(!el) return;
+ const c=d && d.course_2;
+ if(!c || !c.prepaid){ el.hidden=true; return; }
+ el.hidden=false;
+ el.innerHTML="💳 Предоплаты: <b>"+c.prepaid+"</b> чел. · внесено <b>"+rub(c.prepaid_sum||0)+
+   "</b> · осталось довнести <b>"+rub(c.prepaid_left||0)+"</b>";
+}
+
 async function pull(){
  try{
   const r=await fetch(FEED,{cache:"no-store"});
@@ -560,7 +576,7 @@ async function pull(){
   const d=await r.json();
   if(d && d.dashboard){
    ["s1","n1a","n1b","n2a","n2b"].forEach(k=>{const v=d.dashboard[k];if(typeof v==="number")st[k]=v;});
-   syncInputs();render();save();
+   syncInputs();render();save();renderPrepay(d);
    stamp("из GetCourse · обновлено "+(d.updated_at||"")+" МСК");
   }
  }catch(e){
