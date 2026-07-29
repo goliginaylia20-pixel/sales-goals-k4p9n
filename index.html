@@ -174,6 +174,21 @@
   .chip{border:0;cursor:pointer;font:inherit;font-size:13px;font-weight:700;padding:7px 12px;border-radius:999px;
     background:rgba(120,110,255,.10);color:#5B54A8}
 
+  .day{border-top:1px solid rgba(106,91,255,.13);padding:11px 0 4px}
+  .day:first-child{border-top:0;padding-top:2px}
+  .day.today .dh{color:#6A5BFF}
+  .dh{display:flex;align-items:baseline;gap:8px;font-size:14.5px;font-weight:800;letter-spacing:-.2px;margin-bottom:5px}
+  .dh .dow{font-size:12px;font-weight:700;opacity:.5;text-transform:lowercase}
+  .dh .tdy{font-size:10.5px;font-weight:800;letter-spacing:.6px;color:#fff;background:linear-gradient(120deg,#6A5BFF,#C740F0);
+    padding:3px 8px;border-radius:999px;text-transform:uppercase}
+  .day textarea{width:100%;box-sizing:border-box;resize:none;overflow:hidden;min-height:40px;border-radius:12px;
+    border:1.5px solid rgba(106,91,255,.16);background:#FBFAFF;padding:9px 11px;
+    font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#241f45;outline:none}
+  .day textarea:focus{border-color:#6A5BFF;background:#fff;box-shadow:0 0 0 3px rgba(106,91,255,.11)}
+  .day.today textarea{border-color:rgba(106,91,255,.42);background:#fff}
+  .morebtn{width:100%;margin-top:10px;border:0;cursor:pointer;font:inherit;font-size:13.5px;font-weight:700;
+    color:#5B54A8;background:rgba(120,110,255,.10);padding:11px;border-radius:12px}
+
 </style>
 </head>
 <body>
@@ -193,17 +208,13 @@
   <section class="pane" id="pane-sched" hidden>
     <div class="schedcard">
       <h2>Расписание</h2>
-      <div class="schedhint">Пиши как в Заметках: число месяца отдельной строкой, под ним дела.
-        Клодик читает это сам — для утреннего брифинга и напоминаний.</div>
-      <div class="chips">
-        <button class="chip" data-ins="today">+ сегодня</button>
-        <button class="chip" data-ins="tomorrow">+ завтра</button>
-        <button class="chip" data-ins="time">+ 00:00 —</button>
-      </div>
-      <textarea id="schedtext" placeholder="29&#10;10:30 Рэй&#10;13:00 продающий эфир&#10;17:00 психолог&#10;&#10;30&#10;написать по анализам Рэя"></textarea>
+      <div class="schedhint">Даты уже проставлены — просто пиши дела под нужным днём.
+        Со временем в начале строки («13:00 эфир») Клодик поставит напоминание сам.</div>
+      <div id="schedlist"></div>
+      <button class="morebtn" id="moredays">Показать ещё неделю</button>
       <div class="schedbar">
         <button class="sendbtn" id="sendsched">Отправить Клодику</button>
-        <div class="sendstate" id="sendstate">не отправлено</div>
+        <div class="sendstate" id="sendstate">сохраняется само</div>
       </div>
     </div>
   </section>
@@ -568,15 +579,95 @@ async function pull(){
 </script>
 
 <script>
-/* ---- вкладки + расписание (пишется здесь, улетает Клодику на сервер) ---- */
+/* ---- вкладки + расписание по дням (текст улетает Клодику на сервер) ---- */
 (function(){
   var NOTE_URL = "https://72-56-117-72.nip.io/note?key=V1f1T6pCi2OkWW";
-  var SKEY = "raspisanie-note";
-  var ta, state, btn, timer=null, lastSent="";
+  var OLDKEY = "raspisanie-note";           /* поле одной простынёй, версия 1 */
+  var DAYS_AHEAD = 14, shown = 14;
+  var MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  var DOW = ["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
+  var list, state, btn, timer=null, lastSent="", data={}, ready=false;
 
   function el(id){return document.getElementById(id);}
-  function setState(t,cls){ if(!state)return; state.textContent=t; state.className="sendstate"+(cls?" "+cls:""); }
+  function iso(d){return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
   function hhmm(d){return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);}
+  function setState(t,cls){ if(state){ state.textContent=t; state.className="sendstate"+(cls?" "+cls:""); } }
+  function dayKey(k){return "rasp-"+k;}
+
+  function dates(){
+    var out=[], now=new Date();
+    for(var i=0;i<shown;i++){ var d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i); out.push(d); }
+    return out;
+  }
+
+  function grow(t){ t.style.height="auto"; t.style.height=(t.scrollHeight+2)+"px"; }
+
+  function render(){
+    if(!list) return;
+    var today = iso(new Date());
+    list.innerHTML = "";
+    dates().forEach(function(d){
+      var k = iso(d);
+      var wrap = document.createElement("div");
+      wrap.className = "day" + (k===today ? " today" : "");
+      var h = document.createElement("div");
+      h.className = "dh";
+      h.innerHTML = "<span>"+d.getDate()+" "+MONTHS[d.getMonth()]+"</span>"+
+                    "<span class='dow'>"+DOW[d.getDay()]+"</span>"+
+                    (k===today ? "<span class='tdy'>сегодня</span>" : "");
+      var ta = document.createElement("textarea");
+      ta.rows = 2;
+      ta.dataset.day = k;
+      ta.value = data[k] || "";
+      ta.placeholder = k===today ? "10:30 Рэй" : "";
+      ta.addEventListener("input", function(){ data[k]=ta.value; grow(ta); queue(); });
+      ta.addEventListener("blur", function(){ send(false); });
+      wrap.appendChild(h); wrap.appendChild(ta);
+      list.appendChild(wrap);
+      grow(ta);
+    });
+  }
+
+  function combined(){
+    var out = [];
+    Object.keys(data).sort().forEach(function(k){
+      var v = (data[k]||"").trim();
+      if(!v) return;
+      var p = k.split("-");
+      out.push(parseInt(p[2],10)+" "+MONTHS[parseInt(p[1],10)-1]+" "+p[0]);
+      out.push(v, "");
+    });
+    return out.join("\n").trim();
+  }
+
+  function persist(){
+    Object.keys(data).forEach(function(k){ sset(dayKey(k), data[k]||""); });
+  }
+
+  function send(manual){
+    var txt = combined();
+    if(!txt){ setState(manual ? "пусто — нечего отправлять" : "сохраняется само"); return; }
+    if(!manual && txt===lastSent){ setState("Клодик всё видит ✓","ok"); return; }
+    setState("отправляю…");
+    if(btn) btn.disabled = true;
+    fetch(NOTE_URL, {method:"POST", body:txt})
+      .then(function(r){
+        if(!r.ok) throw new Error(r.status);
+        lastSent = txt;
+        setState("Клодик получил ✓ "+hhmm(new Date()),"ok");
+        if(tg && tg.HapticFeedback){ try{tg.HapticFeedback.notificationOccurred("success");}catch(_){} }
+      })
+      .catch(function(){ setState("не ушло — проверь интернет и нажми кнопку","err"); })
+      .then(function(){ if(btn) btn.disabled=false; });
+  }
+
+  function queue(){
+    if(!ready) return;
+    persist();
+    setState("сохранено, отправлю через пару секунд…");
+    if(timer) clearTimeout(timer);
+    timer = setTimeout(function(){ send(false); }, 2500);
+  }
 
   function showTab(name){
     document.querySelectorAll(".tab").forEach(function(b){ b.classList.toggle("on", b.dataset.tab===name); });
@@ -586,59 +677,33 @@ async function pull(){
     try{ sset("tab-active", name); }catch(_){}
   }
 
-  function send(manual){
-    var txt = ta ? ta.value.trim() : "";
-    if(!txt){ setState("пусто — нечего отправлять"); return; }
-    if(!manual && txt===lastSent) return;
-    setState("отправляю…");
-    if(btn) btn.disabled = true;
-    fetch(NOTE_URL, {method:"POST", body:txt})
-      .then(function(r){
-        if(!r.ok) throw new Error(r.status);
-        lastSent = txt;
-        setState("Клодик получил ✓ "+hhmm(new Date()), "ok");
-        if(tg && tg.HapticFeedback){ try{tg.HapticFeedback.notificationOccurred("success");}catch(_){}}
-      })
-      .catch(function(){ setState("не ушло — проверь интернет, нажми ещё раз", "err"); })
-      .then(function(){ if(btn) btn.disabled = false; });
-  }
-
-  function insert(kind){
-    if(!ta) return;
-    var d = new Date();
-    if(kind==="tomorrow") d.setDate(d.getDate()+1);
-    var chunk = kind==="time" ? "00:00 — " : "\n"+d.getDate()+"\n";
-    var p = ta.selectionStart||ta.value.length;
-    ta.value = ta.value.slice(0,p)+chunk+ta.value.slice(p);
-    ta.focus(); ta.selectionStart = ta.selectionEnd = p+chunk.length;
-    queue();
-  }
-
-  function queue(){
-    if(!ta) return;
-    sset(SKEY, ta.value);
-    setState("сохранено, отправлю через пару секунд…");
-    if(timer) clearTimeout(timer);
-    timer = setTimeout(function(){ send(false); }, 2500);
-  }
-
   document.addEventListener("click", function(e){
-    var t = e.target.closest ? e.target.closest(".tab,.chip,#sendsched") : null;
+    var t = e.target.closest ? e.target.closest(".tab,#sendsched,#moredays") : null;
     if(!t) return;
     if(t.classList.contains("tab")) showTab(t.dataset.tab);
-    else if(t.classList.contains("chip")) insert(t.dataset.ins);
+    else if(t.id==="moredays"){ shown += 7; render(); }
     else send(true);
   });
 
   window.addEventListener("load", function(){
-    ta = el("schedtext"); state = el("sendstate"); btn = el("sendsched");
-    if(ta){
-      ta.addEventListener("input", queue);
-      ta.addEventListener("blur", function(){ send(false); });
-      sget(SKEY).then(function(v){
-        if(typeof v==="string" && v && !ta.value){ ta.value=v; lastSent=v; setState("загружено из памяти"); }
-      });
-    }
+    list = el("schedlist"); state = el("sendstate"); btn = el("sendsched");
+    render();
+    var keys = dates().map(iso);
+    Promise.all(keys.map(function(k){ return sget(dayKey(k)); })).then(function(vals){
+      vals.forEach(function(v,i){ if(typeof v==="string" && v) data[keys[i]] = v; });
+      return sget(OLDKEY);
+    }).then(function(old){
+      /* то, что было написано одним полем в первой версии — кладём в сегодня */
+      if(typeof old==="string" && old.trim()){
+        var t = iso(new Date());
+        if(!data[t]) data[t] = old.trim();
+        sset(OLDKEY, "");
+      }
+      ready = true;
+      render();
+      lastSent = combined();
+      if(lastSent) setState("загружено из памяти");
+    });
     sget("tab-active").then(function(v){ if(v==="sched") showTab("sched"); });
   });
 })();
