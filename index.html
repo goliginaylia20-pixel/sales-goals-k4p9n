@@ -204,7 +204,7 @@
   <div class="head">
     <h1>Цели по продажам · запуск</h1>
     <div class="sub">Лето 2026 · Claude + основной курс</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 5 · предоплаты</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 6 · расписание видно целиком</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
@@ -619,7 +619,16 @@ async function pull(){
     return out;
   }
 
-  function grow(t){ t.style.height="auto"; t.style.height=(t.scrollHeight+2)+"px"; }
+  /* высоту считаем только когда поле реально на экране: у скрытой вкладки
+     scrollHeight = 0, поле схлопывается в одну строку и обрезает текст */
+  function grow(t){
+    if(!t.offsetParent) return;
+    t.style.height="auto"; t.style.height=(t.scrollHeight+2)+"px";
+  }
+  function growAll(){
+    if(!list) return;
+    list.querySelectorAll("textarea").forEach(grow);
+  }
 
   function render(){
     if(!list) return;
@@ -693,6 +702,7 @@ async function pull(){
     var s=el("pane-sched"), p=el("pane-sales");
     if(s) s.hidden = (name!=="sched");
     if(p) p.hidden = (name!=="sales");
+    if(name==="sched") growAll();   /* теперь поля видимы — можно мерить высоту */
     try{ sset("tab-active", name); }catch(_){}
   }
 
@@ -720,6 +730,7 @@ async function pull(){
       }
       ready = true;
       render();
+      growAll();
       lastSent = combined();
       if(lastSent) setState("загружено из памяти");
     });
