@@ -699,12 +699,54 @@ async function pull(){
     return out.join("\n").trim();
   }
 
+  /* 01.08.2026: раньше каждый день писался отдельным ключом — на 14 дней это 14
+     параллельных обращений к телеграмному облаку, часть из них молча падала,
+     и назавтра дни оказывались пустыми. Теперь всё расписание — один объект,
+     нарезанный на куски по 1300 символов (у CloudStorage лимит 4096 байт на ключ,
+     кириллица занимает по 2). Ошибку записи больше не проглатываем. */
+  var ALLKEY = "rasp_all";
+  function chunkSet(obj){
+    var s = JSON.stringify(obj), parts = [];
+    for(var i=0;i<s.length;i+=1300) parts.push(s.slice(i,i+1300));
+    if(!parts.length) parts = [""];
+    var jobs = parts.map(function(p,i){ return window.storage.set(ALLKEY+"_"+i, p); });
+    jobs.push(window.storage.set(ALLKEY+"_n", String(parts.length)));
+    return Promise.all(jobs);
+  }
+  function chunkGet(){
+    return window.storage.get(ALLKEY+"_n").then(function(r){
+      var n = r && parseInt(r.value,10);
+      if(!n) return null;
+      var idx = []; for(var i=0;i<n;i++) idx.push(i);
+      return Promise.all(idx.map(function(i){ return window.storage.get(ALLKEY+"_"+i); }))
+        .then(function(vals){
+          if(vals.some(function(v){ return !v || typeof v.value!=="string"; })) return null;
+          try{ return JSON.parse(vals.map(function(v){ return v.value; }).join("")); }
+          catch(e){ return null; }
+        });
+    }).catch(function(){ return null; });
+  }
+  /* написанное в полях всегда главнее того, что лежит в памяти */
+  function fillEmpty(obj){
+    if(!obj) return;
+    Object.keys(obj).forEach(function(k){
+      if(typeof obj[k]==="string" && obj[k].trim() && !(data[k]||"").trim()) data[k]=obj[k];
+    });
+  }
+
   function persist(){
-    Object.keys(data).forEach(function(k){ sset(dayKey(k), data[k]||""); });
+    return chunkSet(data);
   }
 
   function send(manual, dayEl){
     if(timer){ clearTimeout(timer); timer=null; }
+    /* пока не дочитали память и сервер — отправлять нельзя: улетит огрызок
+       расписания и затрёт полную версию у Клодика (случилось 01.08.2026) */
+    if(!ready){
+      setState("ещё загружаю расписание — секунду");
+      if(manual) dayState(dayEl,"секунду…");
+      return;
+    }
     persist();
     var txt = combined();
     if(!txt){
@@ -768,6 +810,33 @@ async function pull(){
     else send(true);
   });
 
+  /* Последняя копия расписания лежит у Клодика на сервере — если телеграмная
+     память подвела, поднимаем дни оттуда. Сервер только дозаполняет пустые дни. */
+  var NOTE_GET = NOTE_URL.replace("/note?", "/note-text?");
+  function fromServer(){
+    return fetch(NOTE_GET, {cache:"no-store"})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        if(!j || typeof j.text!=="string" || !j.text.trim()) return false;
+        var out = {}, cur = null;
+        j.text.split("\n").forEach(function(line){
+          var m = line.trim().match(/^(\d{1,2})\s+([А-Яа-яЁё]+)\s+(\d{4})$/);
+          var mi = m ? MONTHS.indexOf(m[2].toLowerCase()) : -1;
+          if(mi >= 0){
+            cur = m[3]+"-"+("0"+(mi+1)).slice(-2)+"-"+("0"+m[1]).slice(-2);
+            out[cur] = [];
+          } else if(cur){ out[cur].push(line); }
+        });
+        var restored = false;
+        Object.keys(out).forEach(function(k){
+          var v = out[k].join("\n").trim();
+          if(v && !(data[k]||"").trim()){ data[k] = v; restored = true; }
+        });
+        return restored;
+      })
+      .catch(function(){ return false; });
+  }
+
   /* читаем дни из памяти, НЕ затирая то, что уже набрано в полях */
   function loadKeys(keys){
     return Promise.all(keys.map(function(k){ return sget(dayKey(k)); })).then(function(vals){
@@ -781,7 +850,13 @@ async function pull(){
     list = el("schedlist"); state = el("sendstate"); btn = el("sendsched");
     render();
     setState("загружаю…");
-    loadKeys(dates().map(iso)).then(function(){
+    /* порядок важен: сначала общий ключ, потом старые подневные (для тех дней,
+       что писались прошлой версией), потом сервер — он закрывает дыры */
+    var restored = false;
+    chunkGet().then(function(obj){
+      fillEmpty(obj);
+      return loadKeys(dates().map(iso));
+    }).then(function(){
       return sget(OLDKEY);
     }).then(function(old){
       /* то, что было написано одним полем в первой версии — кладём в сегодня */
@@ -790,11 +865,16 @@ async function pull(){
         if(!data[t]) data[t] = old.trim();
         sset(OLDKEY, "");
       }
+      return fromServer();
+    }).then(function(fromNet){
+      restored = fromNet;
       ready = true;
       render();
       growAll();
       lastSent = combined();
-      if(lastSent){ setState("Клодик всё видит ✓","ok"); allDaysState("сохранено ✓","ok"); }
+      persist();                       /* сразу перекладываем всё в новый формат */
+      if(restored) setState("вернула дни из памяти Клодика ✓","ok");
+      else if(lastSent){ setState("Клодик всё видит ✓","ok"); allDaysState("сохранено ✓","ok"); }
       else setState("сохраняется само");
     });
     sget("tab-active").then(function(v){ if(v==="sched") showTab("sched"); });
