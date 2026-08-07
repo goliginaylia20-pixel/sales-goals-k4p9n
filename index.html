@@ -790,26 +790,64 @@ async function pull(){
      нарезанный на куски по 1300 символов (у CloudStorage лимит 4096 байт на ключ,
      кириллица занимает по 2). Ошибку записи больше не проглатываем. */
   var ALLKEY = "rasp_all";
-  function chunkSet(obj){
+  function chunkSetK(key, obj){
     var s = JSON.stringify(obj), parts = [];
     for(var i=0;i<s.length;i+=1300) parts.push(s.slice(i,i+1300));
     if(!parts.length) parts = [""];
-    var jobs = parts.map(function(p,i){ return window.storage.set(ALLKEY+"_"+i, p); });
-    jobs.push(window.storage.set(ALLKEY+"_n", String(parts.length)));
+    var jobs = parts.map(function(p,i){ return window.storage.set(key+"_"+i, p); });
+    jobs.push(window.storage.set(key+"_n", String(parts.length)));
     return Promise.all(jobs);
   }
-  function chunkGet(){
-    return window.storage.get(ALLKEY+"_n").then(function(r){
+  function chunkGetK(key){
+    return window.storage.get(key+"_n").then(function(r){
       var n = r && parseInt(r.value,10);
       if(!n) return null;
       var idx = []; for(var i=0;i<n;i++) idx.push(i);
-      return Promise.all(idx.map(function(i){ return window.storage.get(ALLKEY+"_"+i); }))
+      return Promise.all(idx.map(function(i){ return window.storage.get(key+"_"+i); }))
         .then(function(vals){
           if(vals.some(function(v){ return !v || typeof v.value!=="string"; })) return null;
           try{ return JSON.parse(vals.map(function(v){ return v.value; }).join("")); }
           catch(e){ return null; }
         });
     }).catch(function(){ return null; });
+  }
+  function chunkSet(obj){ return chunkSetK(ALLKEY, obj); }
+  function chunkGet(){ return chunkGetK(ALLKEY); }
+
+  /* 07.08.2026. Раньше сервер дозаполнял ТОЛЬКО пустые дни, поэтому строки,
+     которые Клодик дописывал в уже открытый в аппе день, до Юли не доезжали.
+     Теперь недостающие строки подмешиваются в день — но лишь те, которых она
+     сама не удаляла: удаление означает «сделано» (см. note-done-tracker),
+     и воскресать такие строки не должны. Что удалено — помним здесь. */
+  var DELKEY = "rasp_del";
+  var deleted = {};                 /* дата -> [строки, которые Юля убрала] */
+  var baseline = {};                /* дата -> текст на момент последнего сохранения */
+  var DEL_MAX = 400;
+
+  function lines(t){
+    return String(t||"").split("\n").map(function(s){ return s.trim(); })
+           .filter(function(s){ return s.length; });
+  }
+  function markDeletions(){
+    var changed = false;
+    Object.keys(baseline).forEach(function(k){
+      var was = lines(baseline[k]), now = lines(data[k]);
+      was.forEach(function(l){
+        if(now.indexOf(l) >= 0) return;
+        var arr = deleted[k] || (deleted[k] = []);
+        if(arr.indexOf(l) < 0){ arr.push(l); changed = true; }
+      });
+    });
+    Object.keys(data).forEach(function(k){ baseline[k] = data[k]; });
+    if(changed){
+      /* список не должен пухнуть без предела — держим последние DEL_MAX строк */
+      var total = 0;
+      Object.keys(deleted).sort().reverse().forEach(function(k){
+        total += deleted[k].length;
+        if(total > DEL_MAX) delete deleted[k];
+      });
+      chunkSetK(DELKEY, deleted);
+    }
   }
   /* написанное в полях всегда главнее того, что лежит в памяти */
   function fillEmpty(obj){
@@ -832,6 +870,7 @@ async function pull(){
       if(manual) dayState(dayEl,"секунду…");
       return;
     }
+    markDeletions();
     persist();
     var txt = combined();
     if(!txt){
@@ -915,7 +954,18 @@ async function pull(){
         var restored = false;
         Object.keys(out).forEach(function(k){
           var v = out[k].join("\n").trim();
-          if(v && !(data[k]||"").trim()){ data[k] = v; restored = true; }
+          if(!v) return;
+          if(!(data[k]||"").trim()){ data[k] = v; restored = true; return; }
+          /* день уже заполнен — подмешиваем только то, чего в нём нет
+             и что Юля не удаляла сама */
+          var have = lines(data[k]), gone = deleted[k] || [], add = [];
+          lines(v).forEach(function(l){
+            if(have.indexOf(l) < 0 && gone.indexOf(l) < 0 && add.indexOf(l) < 0) add.push(l);
+          });
+          if(add.length){
+            data[k] = String(data[k]).replace(/\s*$/, "") + "\n" + add.join("\n");
+            restored = true;
+          }
         });
         return restored;
       })
@@ -940,6 +990,9 @@ async function pull(){
     var restored = false;
     chunkGet().then(function(obj){
       fillEmpty(obj);
+      return chunkGetK(DELKEY);
+    }).then(function(del){
+      if(del && typeof del==="object") deleted = del;
       return loadKeys(dates().map(iso));
     }).then(function(){
       return sget(OLDKEY);
@@ -957,6 +1010,8 @@ async function pull(){
       render();
       growAll();
       lastSent = combined();
+      /* точка отсчёта для «что удалила Юля»: всё, что есть сразу после загрузки */
+      Object.keys(data).forEach(function(k){ baseline[k] = data[k]; });
       persist();                       /* сразу перекладываем всё в новый формат */
       if(restored) setState("вернула дни из памяти Клодика ✓","ok");
       else if(lastSent){ setState("Клодик всё видит ✓","ok"); allDaysState("сохранено ✓","ok"); }
