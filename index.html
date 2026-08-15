@@ -772,8 +772,31 @@ async function pull(){
     });
   }
 
+  /* день = только настоящая дата. Всё остальное в data — след прошлых поломок,
+     из-за него в заметку уезжали заголовки «NaN undefined 2028» */
+  var DAYRE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+  /* мусор, который наплодила прошлая версия: дни-призраки и обломки заголовков
+     («227 августа 2026» внутри тела дня) */
+  function JUNK(l){
+    l = String(l||"").trim();
+    if(/^NaN undefined \d+$/.test(l)) return true;
+    var m = l.match(/^(\d+)\s+([А-Яа-яЁё]+)\s+(\d{4})$/);
+    return !!(m && MONTHS.indexOf(m[2].toLowerCase()) >= 0);
+  }
+  var JUNKRE = { test: JUNK };
+  function scrub(){
+    Object.keys(data).forEach(function(k){
+      if(!DAYRE.test(k)){ delete data[k]; return; }
+      if(typeof data[k]!=="string"){ delete data[k]; return; }
+      if(JUNKRE.test(data[k])){ delete data[k]; return; }
+      var kept = String(data[k]).split("\n").filter(function(l){ return !JUNKRE.test(l.trim()); });
+      data[k] = kept.join("\n");
+    });
+  }
+
   function combined(){
     var out = [];
+    scrub();
     Object.keys(data).sort().forEach(function(k){
       var v = (data[k]||"").trim();
       if(!v) return;
@@ -790,23 +813,57 @@ async function pull(){
      нарезанный на куски по 1300 символов (у CloudStorage лимит 4096 байт на ключ,
      кириллица занимает по 2). Ошибку записи больше не проглатываем. */
   var ALLKEY = "rasp_all";
-  function chunkSetK(key, obj){
+
+  /* 15.08.2026, ПОЧЕМУ ЭТО ПЕРЕПИСАНО. Куски писались без очереди и на КАЖДОЕ
+     нажатие клавиши: два сохранения разной длины летели одновременно, и в
+     облаке оказывались куски от разных версий. Склеенная строка всё равно
+     парсилась как JSON — отсюда дни-призраки ("NaN undefined 2028"), потерянная
+     «\n» («nРилс») и воскресшие недопечатанные строки («Стар» рядом со
+     «Старт 3 потока»). Теперь: очередь записей (следующая ждёт предыдущую)
+     и метка поколения в каждом куске — куски разных поколений не склеиваются. */
+  var writeQ = Promise.resolve(), genSeq = 0;
+  function nextGen(){ genSeq = (genSeq + 1) % 1000000; return String(genSeq)+"."+String(shownStamp()); }
+  function shownStamp(){ return Math.floor(new Date().getTime()/1000) % 100000; }
+
+  function rawChunkSet(key, obj){
     var s = JSON.stringify(obj), parts = [];
     for(var i=0;i<s.length;i+=1300) parts.push(s.slice(i,i+1300));
     if(!parts.length) parts = [""];
-    var jobs = parts.map(function(p,i){ return window.storage.set(key+"_"+i, p); });
-    jobs.push(window.storage.set(key+"_n", String(parts.length)));
-    return Promise.all(jobs);
+    var g = nextGen(), tag = g + "|";
+    /* счётчик пишем ПОСЛЕДНИМ: пока он не обновился, читается прошлое поколение целиком */
+    return Promise.all(parts.map(function(p,i){ return window.storage.set(key+"_"+i, tag+p); }))
+      .then(function(){ return window.storage.set(key+"_n", tag+parts.length); });
+  }
+  function chunkSetK(key, obj){
+    var snap = JSON.parse(JSON.stringify(obj));   /* пишем снимок: объект успеет измениться, пока ждём очередь */
+    writeQ = writeQ.then(function(){ return rawChunkSet(key, snap); },
+                         function(){ return rawChunkSet(key, snap); });
+    return writeQ;
   }
   function chunkGetK(key){
     return window.storage.get(key+"_n").then(function(r){
-      var n = r && parseInt(r.value,10);
+      if(!r || typeof r.value!=="string") return null;
+      var head = r.value, gen = null, n;
+      var bar = head.indexOf("|");
+      if(bar > 0){ gen = head.slice(0,bar); n = parseInt(head.slice(bar+1),10); }
+      else { n = parseInt(head,10); }         /* старый формат без метки — читаем как есть */
       if(!n) return null;
       var idx = []; for(var i=0;i<n;i++) idx.push(i);
       return Promise.all(idx.map(function(i){ return window.storage.get(key+"_"+i); }))
         .then(function(vals){
-          if(vals.some(function(v){ return !v || typeof v.value!=="string"; })) return null;
-          try{ return JSON.parse(vals.map(function(v){ return v.value; }).join("")); }
+          var out = [];
+          for(var i=0;i<vals.length;i++){
+            var v = vals[i];
+            if(!v || typeof v.value!=="string") return null;
+            var s = v.value;
+            if(gen){
+              var b = s.indexOf("|");
+              if(b < 0 || s.slice(0,b) !== gen) return null;   /* кусок от другого сохранения — не склеиваем */
+              s = s.slice(b+1);
+            }
+            out.push(s);
+          }
+          try{ return JSON.parse(out.join("")); }
           catch(e){ return null; }
         });
     }).catch(function(){ return null; });
@@ -827,6 +884,41 @@ async function pull(){
   function lines(t){
     return String(t||"").split("\n").map(function(s){ return s.trim(); })
            .filter(function(s){ return s.length; });
+  }
+
+  /* Сравнение строк «на глаз»: точное совпадение ловило не всё, и в дне
+     оказывались «13:00  эфир…» и «13:00 эфир…» (разница в одном пробеле),
+     «Стар» и «Старт 3 потока», три версии строки про гнатолога с опечатками. */
+  function norm(s){
+    return String(s||"").toLowerCase().replace(/ё/g,"е")
+      .replace(/[«»"'`.,:;!?()\-–—]/g," ").replace(/\s+/g," ").trim();
+  }
+  function lev(a,b){
+    if(a===b) return 0;
+    var prev = [], cur = [], i, j;
+    for(j=0;j<=b.length;j++) prev[j]=j;
+    for(i=1;i<=a.length;i++){
+      cur[0]=i;
+      for(j=1;j<=b.length;j++){
+        cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+(a.charAt(i-1)===b.charAt(j-1)?0:1));
+      }
+      for(j=0;j<=b.length;j++) prev[j]=cur[j];
+    }
+    return prev[b.length];
+  }
+  function tm(s){ var m = String(s||"").trim().match(/^(\d{1,2}):(\d{2})/); return m ? m[1].replace(/^0/,"")+":"+m[2] : null; }
+  function nearDup(a,b){
+    /* «11:00 Рэй» и «13:00 Рэй» — разные дела: разное время = не дубль, точка */
+    var ta = tm(a), tb = tm(b);
+    if(ta && tb && ta !== tb) return false;
+    a = norm(a); b = norm(b);
+    if(!a || !b) return false;
+    if(a === b) return true;
+    /* одна строка — начало другой: недопечатанная версия того же дела */
+    var sh = a.length<b.length ? a : b, lo = a.length<b.length ? b : a;
+    if(sh.length >= 4 && lo.indexOf(sh) === 0) return true;
+    if(Math.abs(a.length-b.length) > 6) return false;
+    return lev(a,b) <= Math.max(2, Math.floor(lo.length*0.2));   /* опечатки */
   }
   function markDeletions(){
     var changed = false;
@@ -857,8 +949,16 @@ async function pull(){
     });
   }
 
+  /* писать на каждую букву не нужно и вредно (см. комментарий у chunkSetK):
+     копим 700 мс, при явном сохранении и уходе с поля пишем сразу */
+  var ptimer = null;
   function persist(){
+    if(ptimer){ clearTimeout(ptimer); ptimer = null; }
     return chunkSet(data);
+  }
+  function persistSoon(){
+    if(ptimer) clearTimeout(ptimer);
+    ptimer = setTimeout(function(){ ptimer = null; chunkSet(data); }, 700);
   }
 
   function send(manual, dayEl){
@@ -905,7 +1005,7 @@ async function pull(){
   /* сохраняем в память сразу (даже пока грузимся), а отправку откладываем:
      пока Юля печатает, каждая пауза не должна улетать на сервер */
   function queue(){
-    persist();
+    persistSoon();
     if(!ready) return;
     if(timer) clearTimeout(timer);
     timer = setTimeout(function(){ send(false); }, 8000);
@@ -960,7 +1060,10 @@ async function pull(){
              и что Юля не удаляла сама */
           var have = lines(data[k]), gone = deleted[k] || [], add = [];
           lines(v).forEach(function(l){
-            if(have.indexOf(l) < 0 && gone.indexOf(l) < 0 && add.indexOf(l) < 0) add.push(l);
+            if(JUNKRE.test(l)) return;
+            function dup(arr){ return arr.some(function(x){ return nearDup(x, l); }); }
+            if(dup(have) || dup(gone) || dup(add)) return;
+            add.push(l);
           });
           if(add.length){
             data[k] = String(data[k]).replace(/\s*$/, "") + "\n" + add.join("\n");
@@ -1006,6 +1109,7 @@ async function pull(){
       return fromServer();
     }).then(function(fromNet){
       restored = fromNet;
+      scrub();                         /* выкидываем дни-призраки прошлой версии до первой отправки */
       ready = true;
       render();
       growAll();
