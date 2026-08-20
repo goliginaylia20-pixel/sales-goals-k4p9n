@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Цели по продажам</title>
+<title>Центр управления</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   @font-face{font-family:'Manrope';font-style:normal;font-weight:200 900;font-display:swap;
@@ -161,6 +161,43 @@
   .tab{flex:0 0 auto;border:0;cursor:pointer;font:inherit;font-size:14px;font-weight:700;
     padding:9px 16px;border-radius:999px;background:rgba(120,110,255,.10);color:#5B54A8;white-space:nowrap}
   .tab.on{background:linear-gradient(120deg,#6A5BFF,#C740F0);color:#fff;box-shadow:0 6px 16px rgba(106,91,255,.28)}
+  /* --- Выплаты --- */
+  .paycard{background:var(--card,#fff);border-radius:22px;padding:18px 16px 20px;margin:0 0 16px;
+    box-shadow:0 10px 30px rgba(20,16,60,.08)}
+  .paymonth{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .paymonth b{font-size:18px}
+  .mbtn{border:0;background:rgba(106,91,255,.12);color:#6A5BFF;font:inherit;font-weight:800;font-size:18px;
+    width:38px;height:38px;border-radius:12px;cursor:pointer}
+  .payday{margin:16px 0 8px;font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;opacity:.5}
+  .payrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:14px;background:rgba(120,120,160,.07);margin-bottom:8px}
+  .payrow.done{background:rgba(46,190,120,.14)}
+  .paychk{flex:0 0 26px;width:26px;height:26px;border-radius:9px;border:2px solid rgba(120,120,160,.4);
+    display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;background:transparent}
+  .payrow.done .paychk{background:#2EBE78;border-color:#2EBE78}
+  .payname{flex:1 1 auto;font-size:15px;font-weight:600}
+  .payrow.done .payname{opacity:.55;text-decoration:line-through}
+  .paysum{font-size:15px;font-weight:800;white-space:nowrap}
+  .paydel{flex:0 0 auto;border:0;background:transparent;color:#E0507A;font:inherit;font-size:18px;cursor:pointer;padding:0 4px}
+  .paygroup{display:flex;justify-content:space-between;padding:9px 12px;margin:-2px 0 10px;
+    border-radius:12px;background:rgba(106,91,255,.10);font-size:14px;font-weight:800}
+  .paytot{margin-top:18px;padding-top:16px;border-top:1px solid rgba(120,120,160,.2)}
+  .paytot .r{display:flex;justify-content:space-between;font-size:15px;margin-bottom:8px}
+  .paytot .r.big{font-size:19px;font-weight:800}
+  .paybar{height:8px;border-radius:99px;background:rgba(120,120,160,.16);overflow:hidden;margin:10px 0 4px}
+  .payfill{height:100%;border-radius:99px;background:linear-gradient(90deg,#2BC7DE,#6A5BFF,#C740F0);width:0%}
+  .payadd{display:none;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .payadd.on{display:flex}
+  .payadd input{font:inherit;font-size:15px;font-weight:600;color:#15121f;-webkit-text-fill-color:#15121f;
+    padding:10px 12px;border-radius:12px;border:1px solid rgba(120,120,160,.3);background:#fff}
+  .payadd input.n{flex:1 1 120px;min-width:0}
+  .payadd input.d{width:64px}
+  .payadd input.a{width:110px}
+  .payadd button{border:0;background:#6A5BFF;color:#fff;font:inherit;font-weight:700;padding:10px 16px;border-radius:12px;cursor:pointer}
+  .paytools{display:flex;gap:8px;margin-top:12px}
+  .paytools button{flex:1 1 auto;border:0;background:rgba(120,120,160,.12);font:inherit;font-weight:700;
+    padding:11px 12px;border-radius:12px;cursor:pointer;color:inherit}
+  .payonce{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;opacity:.75}
+  .payhint{font-size:12px;opacity:.55;margin-top:10px;line-height:1.45}
   .pane[hidden]{display:none}
   /* --- расписание --- */
   .schedcard{background:#fff;border-radius:20px;padding:16px;box-shadow:0 10px 28px rgba(60,40,140,.10)}
@@ -218,16 +255,47 @@
 <div class="wrap">
 
   <div class="head">
-    <h1>Цели по продажам · запуск</h1>
-    <div class="sub">Лето 2026 · Claude + основной курс</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 7 · кнопка «Сохранить» под каждым днём</div>
+    <h1>Центр управления</h1>
+    <div class="sub">Расписание · продажи · выплаты</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 11 · вкладка «Выплаты», у 3 потока один тариф</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
   <div class="tabs">
     <button class="tab" data-tab="sched">📅 Расписание</button>
     <button class="tab on" data-tab="sales">💰 Продажи</button>
+    <button class="tab" data-tab="pay">💸 Выплаты</button>
   </div>
+
+  <section class="pane" id="pane-pay" hidden>
+    <div class="paycard">
+      <div class="paymonth">
+        <button class="mbtn" id="pmprev">‹</button>
+        <b id="pmlabel">—</b>
+        <button class="mbtn" id="pmnext">›</button>
+      </div>
+      <div id="paylist"></div>
+      <div class="paytot">
+        <div class="r"><span>Оплачено</span><b class="num" id="pay_done">0 ₽</b></div>
+        <div class="r"><span>Осталось</span><b class="num" id="pay_left">0 ₽</b></div>
+        <div class="paybar"><div class="payfill" id="pay_fill"></div></div>
+        <div class="r big"><span>Итого в месяц</span><b class="num" id="pay_all">0 ₽</b></div>
+      </div>
+      <div class="paytools">
+        <button id="payaddbtn">＋ Добавить</button>
+        <button id="payeditbtn">Править</button>
+      </div>
+      <div class="payadd" id="payaddform">
+        <input class="d" id="pa_day" type="number" min="1" max="31" placeholder="дата">
+        <input class="n" id="pa_name" type="text" placeholder="за что">
+        <input class="a" id="pa_sum" type="number" min="0" placeholder="сумма">
+        <label class="payonce"><input type="checkbox" id="pa_once"> только этот месяц</label>
+        <button id="pa_ok">Добавить</button>
+      </div>
+      <div class="payhint">Галочка ставится на конкретный месяц — в следующем список снова чистый.
+        Клодик напомнит утром в день выплаты.</div>
+    </div>
+  </section>
 
   <section class="pane" id="pane-sched" hidden>
     <div class="schedcard">
@@ -319,15 +387,7 @@
       </div>
     </div>
     <div class="crow">
-      <div class="crow-lab">Тариф 1 · <b>14 990 ₽</b></div>
-      <div class="crow-ctl">
-        <button class="step" data-act="m" data-t="n3a">−</button>
-        <div class="field"><input type="number" id="in_n3a" min="0" value="0"><span class="lab">мест</span></div>
-        <button class="step" data-act="p" data-t="n3a">+</button>
-      </div>
-    </div>
-    <div class="crow">
-      <div class="crow-lab">Тариф 2 · <b>19 990 ₽</b></div>
+      <div class="crow-lab">Тариф «с поддержкой» · <b>21 990 ₽</b></div>
       <div class="crow-ctl">
         <button class="step" data-act="m" data-t="n3b">−</button>
         <div class="field"><input type="number" id="in_n3b" min="0" value="0"><span class="lab">мест</span></div>
@@ -529,6 +589,7 @@ window.storage = {
 const TAX=0.08, COMM=0.035;
 const S1={price:990,min:500,opt:750,max:1000,sup:1250,ult:1500,leg:1750,deadline:"2026-07-29"};
 const S2={p1:14990,p2:19990,min:50,opt:100,max:150};
+const S3={p:21990};   /* у 3 потока один тариф — «с поддержкой» 21 990 */
 const S2A_START="2026-07-29";
 const S2C_START="2026-08-10";   /* 3 поток: с этого дня заказы считаем третьим потоком */
 const KEY="tseli-prodazh-v3", OLDKEY="tseli-prodazh-v2";
@@ -619,7 +680,7 @@ function render(){
  else p1="Осталось <b>"+d1+" дн.</b> до 29 июля. Для оптимума — ~<b>"+per1+" продаж/день</b>.";
  $("pace1").innerHTML=p1;
 
- const pc=st.n3a+st.n3b, gc=st.n3a*S2.p1+st.n3b*S2.p2;
+ const pc=st.n3b, gc=st.n3b*S3.p;   /* тарифа «сам» у 3 потока нет */
  renderStream("C",pc,gc,true,S2C_START,"10 августа");
  const pa=st.n2a+st.n2b, ga=st.n2a*S2.p1+st.n2b*S2.p2;
  renderStream("A",pa,ga,true);
@@ -638,7 +699,7 @@ function render(){
  $("s2rev").textContent=rub(gc+ga+gb);
 }
 
-function syncInputs(){["s1","n3a","n3b","n2a","n2b","n1a","n1b"].forEach(k=>{const el=$("in_"+k);if(el)el.value=st[k]||0;});}
+function syncInputs(){["s1","n3b","n2a","n2b","n1a","n1b"].forEach(k=>{const el=$("in_"+k);if(el)el.value=st[k]||0;});}
 
 document.addEventListener("click",e=>{
  const b=e.target.closest(".step");
@@ -1013,9 +1074,9 @@ async function pull(){
 
   function showTab(name){
     document.querySelectorAll(".tab").forEach(function(b){ b.classList.toggle("on", b.dataset.tab===name); });
-    var s=el("pane-sched"), p=el("pane-sales");
-    if(s) s.hidden = (name!=="sched");
-    if(p) p.hidden = (name!=="sales");
+    /* панелей стало три — гасим все и открываем нужную, чтобы новая вкладка
+       не требовала правки этой функции каждый раз */
+    document.querySelectorAll(".pane").forEach(function(p){ p.hidden = (p.id !== "pane-"+name); });
     if(name==="sched") growAll();   /* теперь поля видимы — можно мерить высоту */
     try{ sset("tab-active", name); }catch(_){}
   }
@@ -1121,8 +1182,135 @@ async function pull(){
       else if(lastSent){ setState("Клодик всё видит ✓","ok"); allDaysState("сохранено ✓","ok"); }
       else setState("сохраняется само");
     });
-    sget("tab-active").then(function(v){ if(v==="sched") showTab("sched"); });
+    sget("tab-active").then(function(v){ if(v==="sched"||v==="pay") showTab(v); });
   });
+})();
+</script>
+<script>
+/* ===== Выплаты =====
+   Список повторяется каждый месяц, галочки живут по месяцам: paid["2026-08"]=[id,…].
+   Так в новом месяце список сам становится чистым, а история остаётся. */
+(function(){
+  var PKEY="vyplaty-v1";
+  var SEED=[
+    {id:"trener",  d:1,  n:"Тренер",        a:50000,  g:"Конь"},
+    {id:"konovod", d:1,  n:"Коновод",       a:30000,  g:"Конь"},
+    {id:"dennik",  d:1,  n:"Денник",        a:97000,  g:"Конь"},
+    {id:"dom",     d:1,  n:"Дом",           a:320000, g:""},
+    {id:"buh",     d:1,  n:"Бухгалтер",     a:10000,  g:""},
+    {id:"mira",    d:6,  n:"Мира",          a:60000,  g:""},
+    {id:"roma",    d:11, n:"Рома, конюх",   a:3000,   g:"Конь"},
+    {id:"baha",    d:11, n:"Баха",          a:15000,  g:"Конь"},
+    {id:"sveta",   d:26, n:"Света",         a:80000,  g:""},
+    {id:"valya",   d:26, n:"Валя",          a:200000, g:"", once:"2026-08"}   /* разовая, только этот месяц */
+  ];
+  var P={items:SEED.slice(), paid:{}, del:[]};   /* del — что Юля удалила, чтобы SEED не воскрешал */
+  var cur=new Date(), curY=cur.getFullYear(), curM=cur.getMonth();
+  var editing=false;
+  var MON=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+  var MONG=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  var e=function(id){return document.getElementById(id);};
+  var rubl=function(n){return Math.round(n).toLocaleString("ru-RU")+" ₽";};
+  function mkey(){return curY+"-"+String(curM+1).padStart(2,"0");}
+  function paidSet(){var k=mkey();if(!P.paid[k])P.paid[k]=[];return P.paid[k];}
+  function isPaid(id){return paidSet().indexOf(id)>=0;}
+  function psave(){try{window.storage.set(PKEY,JSON.stringify(P));}catch(_){}}
+
+  function render(){
+    e("pmlabel").textContent=MON[curM][0].toUpperCase()+MON[curM].slice(1)+" "+curY;
+    var days={}, mk=mkey();
+    /* once:"YYYY-MM" — разовая выплата, показываем только в свой месяц */
+    P.items.filter(function(it){ return !it.once || it.once===mk; })
+           .forEach(function(it){ (days[it.d]=days[it.d]||[]).push(it); });
+    var out="", total=0, done=0;
+    Object.keys(days).map(Number).sort(function(a,b){return a-b;}).forEach(function(d){
+      out+='<div class="payday">'+d+" "+MONG[curM]+'</div>';
+      var groups={};
+      days[d].forEach(function(it){
+        total+=it.a; if(isPaid(it.id)) done+=it.a;
+        if(it.g) groups[it.g]=(groups[it.g]||0)+it.a;
+        out+='<div class="payrow'+(isPaid(it.id)?" done":"")+'" data-id="'+it.id+'">'+
+             '<button class="paychk" data-pid="'+it.id+'">'+(isPaid(it.id)?"✓":"")+'</button>'+
+             '<span class="payname">'+it.n+(it.once?' <span style="opacity:.5;font-weight:600">· разово</span>':'')+'</span>'+
+             '<span class="paysum num">'+rubl(it.a)+'</span>'+
+             (editing?'<button class="paydel" data-del="'+it.id+'">✕</button>':'')+
+             '</div>';
+      });
+      Object.keys(groups).forEach(function(g){
+        out+='<div class="paygroup"><span>'+g+'</span><span class="num">'+rubl(groups[g])+'</span></div>';
+      });
+    });
+    e("paylist").innerHTML=out||'<div class="payhint">Пока пусто — добавь первую выплату.</div>';
+    e("pay_done").textContent=rubl(done);
+    e("pay_left").textContent=rubl(total-done);
+    e("pay_all").textContent=rubl(total);
+    e("pay_fill").style.width=(total?Math.min(done/total*100,100):0)+"%";
+    e("payeditbtn").textContent=editing?"Готово":"Править";
+  }
+
+  function shift(n){
+    curM+=n;
+    if(curM<0){curM=11;curY--;}
+    if(curM>11){curM=0;curY++;}
+    render();
+  }
+
+  document.addEventListener("click",function(ev){
+    var t=ev.target;
+    if(t.id==="pmprev"){shift(-1);return;}
+    if(t.id==="pmnext"){shift(1);return;}
+    if(t.id==="payaddbtn"){e("payaddform").classList.toggle("on");return;}
+    if(t.id==="payeditbtn"){editing=!editing;render();return;}
+    if(t.id==="pa_ok"){
+      var d=parseInt(e("pa_day").value,10), n=(e("pa_name").value||"").trim(), a=parseFloat(e("pa_sum").value);
+      if(!d||d<1||d>31||!n||!(a>0))return;
+      var one=e("pa_once").checked;
+      P.items.push({id:"u"+Date.now(),d:d,n:n,a:a,g:"",once:one?mkey():undefined});
+      e("pa_once").checked=false;
+      e("pa_day").value="";e("pa_name").value="";e("pa_sum").value="";
+      e("payaddform").classList.remove("on");
+      psave();render();return;
+    }
+    if(t.dataset&&t.dataset.pid){
+      var id=t.dataset.pid, arr=paidSet(), i=arr.indexOf(id);
+      if(i>=0)arr.splice(i,1); else arr.push(id);
+      try{ if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.HapticFeedback)
+             Telegram.WebApp.HapticFeedback.impactOccurred("light"); }catch(_){}
+      psave();render();return;
+    }
+    if(t.dataset&&t.dataset.del){
+      var did=t.dataset.del;
+      P.items=P.items.filter(function(x){return x.id!==did;});
+      if(P.del.indexOf(did)<0) P.del.push(did);
+      Object.keys(P.paid).forEach(function(k){P.paid[k]=P.paid[k].filter(function(x){return x!==did;});});
+      psave();render();return;
+    }
+  });
+
+  (function load(){
+    var done=function(v){
+      if(v){
+        try{ var o=(typeof v==="string")?JSON.parse(v):v;
+          if(o&&o.items){
+            P=o;
+            /* новые пункты из SEED дочитываем: правки в коде должны доезжать
+               к тому, у кого уже сохранён список (урок «Нашего дома») */
+            if(!P.del) P.del=[];
+            SEED.forEach(function(sd){
+              if(P.del.indexOf(sd.id)>=0) return;
+              if(!P.items.some(function(x){return x.id===sd.id;})) P.items.push(sd);
+            });
+          }
+        }catch(_){}
+      }
+      render();
+    };
+    try{
+      var r=window.storage.get(PKEY);
+      if(r&&typeof r.then==="function") r.then(function(x){done(x&&x.value);},function(){render();});
+      else done(r&&r.value);
+    }catch(_){ render(); }
+  })();
 })();
 </script>
 </body>
