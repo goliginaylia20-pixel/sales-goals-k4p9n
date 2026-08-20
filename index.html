@@ -1202,7 +1202,8 @@ async function pull(){
     {id:"roma",    d:11, n:"Рома, конюх",   a:3000,   g:"Конь"},
     {id:"baha",    d:11, n:"Баха",          a:15000,  g:"Конь"},
     {id:"sveta",   d:26, n:"Света",         a:80000,  g:""},
-    {id:"valya",   d:26, n:"Валя",          a:200000, g:"", once:"2026-08"}   /* разовая, только этот месяц */
+    {id:"valya",   d:26, n:"Валя",          a:200000, g:"", once:"2026-08"}   /* разовая, только этот месяц */,
+    {id:"domrab",  w:3, n:"Домработница", a:11000,  g:""}   /* каждую среду, w = день недели */
   ];
   var P={items:SEED.slice(), paid:{}, del:[]};   /* del — что Юля удалила, чтобы SEED не воскрешал */
   var cur=new Date(), curY=cur.getFullYear(), curM=cur.getMonth();
@@ -1220,7 +1221,7 @@ async function pull(){
     e("pmlabel").textContent=MON[curM][0].toUpperCase()+MON[curM].slice(1)+" "+curY;
     var days={}, mk=mkey();
     /* once:"YYYY-MM" — разовая выплата, показываем только в свой месяц */
-    P.items.filter(function(it){ return !it.once || it.once===mk; })
+    P.items.filter(function(it){ return it.w===undefined && (!it.once || it.once===mk); })
            .forEach(function(it){ (days[it.d]=days[it.d]||[]).push(it); });
     var out="", total=0, done=0;
     Object.keys(days).map(Number).sort(function(a,b){return a-b;}).forEach(function(d){
@@ -1239,6 +1240,26 @@ async function pull(){
       Object.keys(groups).forEach(function(g){
         out+='<div class="paygroup"><span>'+g+'</span><span class="num">'+rubl(groups[g])+'</span></div>';
       });
+    });
+    /* недельные выплаты: строка на каждую свою дату в этом месяце,
+       галочка у каждой отдельно (id вида domrab@2026-08-05) */
+    var WD=["воскресеньям","понедельникам","вторникам","средам","четвергам","пятницам","субботам"];
+    P.items.filter(function(it){ return it.w!==undefined; }).forEach(function(it){
+      var dates=[], dd=new Date(curY,curM,1);
+      while(dd.getMonth()===curM){ if(dd.getDay()===it.w) dates.push(dd.getDate()); dd.setDate(dd.getDate()+1); }
+      out+='<div class="payday">Каждую неделю · по '+WD[it.w]+'</div>';
+      dates.forEach(function(dnum){
+        var pid=it.id+"@"+mk+"-"+String(dnum).padStart(2,"0");
+        total+=it.a; if(isPaid(pid)) done+=it.a;
+        out+='<div class="payrow'+(isPaid(pid)?" done":"")+'">'+
+             '<button class="paychk" data-pid="'+pid+'">'+(isPaid(pid)?"✓":"")+'</button>'+
+             '<span class="payname">'+it.n+' <span style="opacity:.5;font-weight:600">· '+dnum+" "+MONG[curM]+'</span></span>'+
+             '<span class="paysum num">'+rubl(it.a)+'</span>'+
+             (editing?'<button class="paydel" data-del="'+it.id+'">✕</button>':'')+
+             '</div>';
+      });
+      out+='<div class="paygroup"><span>'+it.n+' · '+dates.length+' раз'+(dates.length===1?"":"а")+
+           '</span><span class="num">'+rubl(it.a*dates.length)+'</span></div>';
     });
     e("paylist").innerHTML=out||'<div class="payhint">Пока пусто — добавь первую выплату.</div>';
     e("pay_done").textContent=rubl(done);
