@@ -202,7 +202,6 @@
   /* --- расписание --- */
   .schedcard{background:#fff;border-radius:20px;padding:16px;box-shadow:0 10px 28px rgba(60,40,140,.10)}
   .schedcard h2{margin:0 0 2px;font-size:19px;letter-spacing:-.3px}
-  .schedhint{font-size:13px;opacity:.7;line-height:1.5;margin-bottom:14px}
   #schedtext{width:100%;box-sizing:border-box;min-height:46vh;resize:vertical;border-radius:14px;
     border:1.5px solid rgba(106,91,255,.22);background:#FBFAFF;padding:13px 14px;
     font:15px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#241f45;outline:none}
@@ -257,7 +256,7 @@
   <div class="head">
     <h1>Центр управления</h1>
     <div class="sub">Расписание · продажи · выплаты</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 11 · вкладка «Выплаты», у 3 потока один тариф</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 12 · расписание без подсказки</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
@@ -300,9 +299,6 @@
   <section class="pane" id="pane-sched" hidden>
     <div class="schedcard">
       <h2>Расписание</h2>
-      <div class="schedhint">Даты уже проставлены — просто пиши дела под нужным днём и жми «Сохранить»
-        под этим же днём (никуда листать не надо). Со временем в начале строки («13:00 эфир») Клодик напомнит вовремя.
-        Без времени — просто дело на день, оно попадёт в утренний брифинг.</div>
       <div id="schedlist"></div>
       <button class="morebtn" id="moredays">Показать ещё неделю</button>
       <div class="schedbar">
