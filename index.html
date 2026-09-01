@@ -243,6 +243,16 @@
   .morebtn{width:100%;margin-top:10px;border:0;cursor:pointer;font:inherit;font-size:13.5px;font-weight:700;
     color:#5B54A8;background:rgba(120,110,255,.10);padding:11px;border-radius:12px}
 
+  .today{background:var(--grad-main);color:#fff;border-radius:24px;padding:18px 18px 16px;
+    margin-bottom:16px;box-shadow:0 14px 34px rgba(150,70,230,0.28)}
+  .today .tt{font-size:10px;letter-spacing:.9px;text-transform:uppercase;font-weight:800;opacity:.9}
+  .today .tv{font-size:34px;font-weight:800;letter-spacing:-1px;margin-top:6px;line-height:1.05}
+  .today .ts{font-size:12.5px;font-weight:600;opacity:.92;margin-top:5px}
+  .today .tl{margin-top:11px;border-top:1px solid rgba(255,255,255,.28);padding-top:9px;
+    display:flex;flex-direction:column;gap:5px}
+  .today .tl div{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;font-weight:700}
+  .today .tl span{opacity:.9;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .today .tf{font-size:11px;opacity:.8;margin-top:9px;font-weight:600}
   .prepay{margin-top:7px;font-size:12.5px;line-height:1.45;color:#3d2f7a;background:rgba(120,110,255,.09);
     border-radius:11px;padding:8px 11px}
   .prepay b{font-weight:800}
@@ -256,7 +266,7 @@
   <div class="head">
     <h1>Центр управления</h1>
     <div class="sub">Расписание · продажи · выплаты</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 12 · расписание без подсказки</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 14 · касса за сегодня</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
@@ -309,6 +319,15 @@
   </section>
 
   <div class="pane" id="pane-sales">
+
+  <!-- касса за сегодня: обновляется вместе с остальными цифрами из GetCourse -->
+  <section class="today" id="todaycard">
+    <div class="tt">Заработано сегодня</div>
+    <div class="tv" id="tdrev">—</div>
+    <div class="ts" id="tdsub">загружаю…</div>
+    <div class="tl" id="tdlist"></div>
+    <div class="tf" id="tdfoot"></div>
+  </section>
 
   <!-- STAGE 1 -->
   <section class="stage">
@@ -558,24 +577,37 @@
 /* Telegram integration injected for @Marafonnewlifebot mini-app */
 var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
 (function tgInit(){ if(tg){ try{tg.ready();tg.expand();}catch(_){}; try{tg.disableVerticalSwipes();}catch(_){}; } })();
+/* 29.08.2026. Юля открыла апп — расписание пустое. Данные были целы и на сервере,
+   и в облаке: колбэк tg.CloudStorage.getItem просто НЕ ВЫЗВАЛСЯ. Промис висел вечно,
+   цепочка загрузки не доходила ни до localStorage, ни до сервера, ready оставался
+   false — поля пустые, «Сохранить» ничего не делает. Правило: любой колбэк
+   телеграмного облака оборачиваем таймаутом, зависание = «данных нет», а дальше
+   работают фолбэки (localStorage, потом сервер Клодика). */
+var CS_TIMEOUT = 3500;
 window.storage = {
   get: function(k){
     return new Promise(function(resolve){
-      function fb(){ try{var lv=localStorage.getItem(k);resolve(lv!==null?{value:lv}:null);}catch(_){resolve(null);} }
+      var done = false;
+      function fin(v){ if(done) return; done = true; resolve(v); }
+      function fb(){ try{var lv=localStorage.getItem(k);fin(lv!==null?{value:lv}:null);}catch(_){fin(null);} }
       if(tg && tg.CloudStorage && tg.CloudStorage.getItem){
+        setTimeout(fb, CS_TIMEOUT);            /* облако молчит — идём в локальную память */
         try{ tg.CloudStorage.getItem(k,function(err,val){
           if(err || val===undefined || val===null || val===""){ fb(); }
-          else resolve({value:val});
+          else fin({value:val});
         }); }catch(_){ fb(); }
       } else { fb(); }
     });
   },
   set: function(k,v){
     return new Promise(function(resolve){
+      var done = false;
+      function fin(){ if(done) return; done = true; resolve(); }
       try{localStorage.setItem(k,v);}catch(_){}
       if(tg && tg.CloudStorage && tg.CloudStorage.setItem){
-        try{ tg.CloudStorage.setItem(k,String(v),function(){resolve();}); }catch(_){ resolve(); }
-      } else resolve();
+        setTimeout(fin, CS_TIMEOUT);           /* запись тоже может не отозваться — не вешаем очередь */
+        try{ tg.CloudStorage.setItem(k,String(v),function(){fin();}); }catch(_){ fin(); }
+      } else fin();
     });
   }
 };
@@ -716,6 +748,30 @@ function prepayLine(elId,c){
  el.innerHTML="💳 Предоплаты: <b>"+c.prepaid+"</b> чел. · внесено <b>"+rub(c.prepaid_sum||0)+
    "</b> · осталось довнести <b>"+rub(c.prepaid_left||0)+"</b>";
 }
+function renderToday(d){
+ const t=d&&d.today; if(!t) return;
+ const rev=$("tdrev"), sub=$("tdsub"), list=$("tdlist"), foot=$("tdfoot");
+ if(rev) rev.textContent=rub(t.revenue||0);
+ const y=d.yesterday||{};
+ if(sub){
+  const pay=t.payments||0;
+  const word=(pay%10===1&&pay%100!==11)?"оплата":((pay%10>=2&&pay%10<=4&&(pay%100<10||pay%100>=20))?"оплаты":"оплат");
+  sub.textContent=pay+" "+word+" · вчера за весь день "+rub(y.revenue||0);
+ }
+ if(list){
+  const off=t.by_offer||{};
+  const rows=Object.keys(off).sort((a,b)=>off[b].revenue-off[a].revenue);
+  list.innerHTML=rows.map(k=>"<div><span>"+k.replace(/</g,"&lt;")+" · "+off[k].count+"</span><b>"+rub(off[k].revenue)+"</b></div>").join("");
+  list.hidden=!rows.length;
+ }
+ /* «Получено» — то, что дошло после комиссии платёжной системы: эту цифру показывает кабинет */
+ if(foot){
+  const parts=[];
+  if(t.received!=null) parts.push("на счёт после комиссии "+rub(t.received));
+  if(t.last_payment) parts.push("последняя оплата "+String(t.last_payment).slice(11,16));
+  foot.textContent=parts.join(" · ");
+ }
+}
 function renderPrepay(d){
  prepayLine("prepayA", d && d.course_2);
  prepayLine("prepayC", d && d.course_3);
@@ -728,7 +784,7 @@ async function pull(){
   const d=await r.json();
   if(d && d.dashboard){
    ["s1","n1a","n1b","n2a","n2b","n3a","n3b"].forEach(k=>{const v=d.dashboard[k];if(typeof v==="number")st[k]=v;});
-   syncInputs();render();save();renderPrepay(d);
+   syncInputs();render();save();renderPrepay(d);renderToday(d);
    stamp("из GetCourse · обновлено "+(d.updated_at||"")+" МСК");
   }
  }catch(e){
@@ -1027,6 +1083,21 @@ async function pull(){
       if(manual) dayState(dayEl,"секунду…");
       return;
     }
+    /* 29.08.2026. Если апп загрузился пустым и серверную копию прочитать не вышло,
+       то любая отправка перезапишет полное расписание у Клодика одной строкой.
+       Лучше не сохранить сейчас, чем стереть месяц дел. */
+    if(bootEmpty){
+      setState("не сохраняю: не вижу свою копию расписания — не хочу её затереть");
+      if(manual) dayState(dayEl,"подожди…");
+      fromServer(2).then(function(ok){
+        if(!ok) return;
+        bootEmpty = false; render(); growAll();
+        lastSent = combined();
+        Object.keys(data).forEach(function(k){ if(!baseline[k]) baseline[k] = data[k]; });
+        setState("расписание вернулось — сохраняй ✓","ok");
+      });
+      return;
+    }
     markDeletions();
     persist();
     var txt = combined();
@@ -1094,11 +1165,23 @@ async function pull(){
   /* Последняя копия расписания лежит у Клодика на сервере — если телеграмная
      память подвела, поднимаем дни оттуда. Сервер только дозаполняет пустые дни. */
   var NOTE_GET = NOTE_URL.replace("/note?", "/note-text?");
-  function fromServer(){
+  /* Сеть в телефоне отваливается чаще, чем кажется: одна неудачная попытка —
+     и день остаётся пустым, хотя копия на сервере есть. Пробуем трижды. */
+  function fromServer(tries){
+    var left = (typeof tries==="number") ? tries : 3;
+    return fromServerOnce().then(function(ok){
+      if(ok || left <= 1) return ok;
+      return new Promise(function(r){ setTimeout(r, 1500); }).then(function(){ return fromServer(left-1); });
+    });
+  }
+  var serverSeen = false;      /* хоть раз получили копию расписания с сервера */
+  var bootEmpty  = false;      /* загрузились пустыми и сервер не ответил — писать нельзя */
+  function fromServerOnce(){
     return fetch(NOTE_GET, {cache:"no-store"})
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(j){
         if(!j || typeof j.text!=="string" || !j.text.trim()) return false;
+        serverSeen = true;
         var out = {}, cur = null;
         j.text.split("\n").forEach(function(line){
           var m = line.trim().match(/^(\d{1,2})\s+([А-Яа-яЁё]+)\s+(\d{4})$/);
@@ -1177,6 +1260,24 @@ async function pull(){
       if(restored) setState("вернула дни из памяти Клодика ✓","ok");
       else if(lastSent){ setState("Клодик всё видит ✓","ok"); allDaysState("сохранено ✓","ok"); }
       else setState("сохраняется само");
+      /* Последний рубеж: если после всей загрузки расписание всё равно пустое —
+         значит и облако, и локальная память промолчали. Тянем с сервера ещё раз,
+         уже не торопясь. Пустой экран у Юли читается как «всё пропало». */
+      if(!combined()){
+        bootEmpty = !serverSeen;
+        setState("поднимаю расписание с сервера…");
+        setTimeout(function(){
+          fromServer(3).then(function(ok){
+            if(!ok){ setState("не дозвонилась до сервера — напиши мне, расписание у меня цело"); return; }
+            bootEmpty = false;
+            render(); growAll();
+            lastSent = combined();
+            Object.keys(data).forEach(function(k){ baseline[k] = data[k]; });
+            persist();
+            setState("вернула расписание с сервера ✓","ok");
+          });
+        }, 800);
+      }
     });
     sget("tab-active").then(function(v){ if(v==="sched"||v==="pay") showTab(v); });
   });
