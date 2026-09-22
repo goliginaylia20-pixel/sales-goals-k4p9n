@@ -197,6 +197,17 @@
   .paytools button{flex:1 1 auto;border:0;background:rgba(120,120,160,.12);font:inherit;font-weight:700;
     padding:11px 12px;border-radius:12px;cursor:pointer;color:inherit}
   .payonce{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;opacity:.75}
+  .paysum{cursor:pointer}
+  .paysum.edited{color:#6A5BFF}
+  .paysum.edited::after{content:"·";margin-left:4px;opacity:.6}
+  .payamt{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+  .payamt input{font:inherit;font-size:15px;font-weight:700;color:#15121f;-webkit-text-fill-color:#15121f;
+    width:120px;padding:9px 12px;border-radius:12px;border:1px solid rgba(106,91,255,.45);background:#fff}
+  .payamt button{border:0;font:inherit;font-weight:700;font-size:13px;padding:9px 12px;border-radius:12px;cursor:pointer}
+  .payamt .only{background:#6A5BFF;color:#fff}
+  .payamt .always{background:rgba(106,91,255,.14);color:#6A5BFF}
+  .payamt .reset{background:rgba(120,120,160,.14);color:inherit}
+  .payamt .x{background:transparent;color:#8a86a0;padding:9px 6px}
   .payhint{font-size:12px;opacity:.55;margin-top:10px;line-height:1.45}
   .pane[hidden]{display:none}
   /* --- расписание --- */
@@ -266,7 +277,7 @@
   <div class="head">
     <h1>Центр управления</h1>
     <div class="sub">Расписание · продажи · выплаты</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 15 · 4 поток</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 16 · 4 поток</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
@@ -302,6 +313,7 @@
         <button id="pa_ok">Добавить</button>
       </div>
       <div class="payhint">Галочка ставится на конкретный месяц — в следующем список снова чистый.
+        Нажми на сумму, чтобы изменить её: «только в этом месяце» или «всегда».
         Клодик напомнит утром в день выплаты.</div>
     </div>
   </section>
@@ -1380,16 +1392,40 @@ async function pull(){
     {id:"valya",   d:26, n:"Валя",          a:200000, g:"", once:"2026-08"}   /* разовая, только этот месяц */,
     {id:"domrab",  w:3, n:"Домработница", a:11000,  g:""}   /* каждую среду, w = день недели */
   ];
-  var P={items:SEED.slice(), paid:{}, del:[]};   /* del — что Юля удалила, чтобы SEED не воскрешал */
+  var P={items:SEED.slice(), paid:{}, del:[], amt:{}};   /* del — что Юля удалила, чтобы SEED не воскрешал;
+                                                            amt["2026-09"][id] — сумма, изменённая на один месяц */
   var cur=new Date(), curY=cur.getFullYear(), curM=cur.getMonth();
   var editing=false;
+  var editAmt=null;   /* id/pid строки, у которой сейчас открыт ввод суммы */
   var MON=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
   var MONG=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  var MONP=["январе","феврале","марте","апреле","мае","июне","июле","августе","сентябре","октябре","ноябре","декабре"];
+  /* 1 раз / 2 раза / 5 раз */
+  function razy(n){var a=n%10,b=n%100;return (a===1&&b!==11)?"раз":((a>=2&&a<=4)&&!(b>=12&&b<=14))?"раза":"раз";}
   var e=function(id){return document.getElementById(id);};
   var rubl=function(n){return Math.round(n).toLocaleString("ru-RU")+" ₽";};
   function mkey(){return curY+"-"+String(curM+1).padStart(2,"0");}
   function paidSet(){var k=mkey();if(!P.paid[k])P.paid[k]=[];return P.paid[k];}
   function isPaid(id){return paidSet().indexOf(id)>=0;}
+  /* сумма строки в текущем месяце: разовая правка перекрывает базовую */
+  function amtMap(){var k=mkey();if(!P.amt)P.amt={};if(!P.amt[k])P.amt[k]={};return P.amt[k];}
+  function hasAmt(pid){var k=mkey();return !!(P.amt&&P.amt[k]&&P.amt[k][pid]!==undefined);}
+  function amtOf(it,pid){var k=mkey();return (P.amt&&P.amt[k]&&P.amt[k][pid]!==undefined)?P.amt[k][pid]:it.a;}
+  /* ячейка суммы: либо число, либо открытый ввод с кнопками */
+  function sumCell(it,pid){
+    var v=amtOf(it,pid);
+    if(editAmt===pid){
+      return '<span class="paysum num">'+rubl(v)+'</span>'+
+        '<div class="payamt" data-form="'+pid+'">'+
+          '<input type="number" inputmode="numeric" min="0" id="amt_in" value="'+v+'">'+
+          '<button class="only" data-amtsave="only" data-pid2="'+pid+'">Только в '+MONP[curM]+'</button>'+
+          '<button class="always" data-amtsave="always" data-pid2="'+pid+'">Всегда</button>'+
+          (hasAmt(pid)?'<button class="reset" data-amtsave="reset" data-pid2="'+pid+'">Вернуть '+rubl(it.a)+'</button>':'')+
+          '<button class="x" data-amtcancel="1">✕</button>'+
+        '</div>';
+    }
+    return '<span class="paysum num'+(hasAmt(pid)?' edited':'')+'" data-amt="'+pid+'">'+rubl(v)+'</span>';
+  }
   function psave(){try{window.storage.set(PKEY,JSON.stringify(P));}catch(_){}}
 
   function render(){
@@ -1403,12 +1439,13 @@ async function pull(){
       out+='<div class="payday">'+d+" "+MONG[curM]+'</div>';
       var groups={};
       days[d].forEach(function(it){
-        total+=it.a; if(isPaid(it.id)) done+=it.a;
-        if(it.g) groups[it.g]=(groups[it.g]||0)+it.a;
+        var av=amtOf(it,it.id);
+        total+=av; if(isPaid(it.id)) done+=av;
+        if(it.g) groups[it.g]=(groups[it.g]||0)+av;
         out+='<div class="payrow'+(isPaid(it.id)?" done":"")+'" data-id="'+it.id+'">'+
              '<button class="paychk" data-pid="'+it.id+'">'+(isPaid(it.id)?"✓":"")+'</button>'+
              '<span class="payname">'+it.n+(it.once?' <span style="opacity:.5;font-weight:600">· разово</span>':'')+'</span>'+
-             '<span class="paysum num">'+rubl(it.a)+'</span>'+
+             sumCell(it,it.id)+
              (editing?'<button class="paydel" data-del="'+it.id+'">✕</button>':'')+
              '</div>';
       });
@@ -1420,21 +1457,22 @@ async function pull(){
        галочка у каждой отдельно (id вида domrab@2026-08-05) */
     var WD=["воскресеньям","понедельникам","вторникам","средам","четвергам","пятницам","субботам"];
     P.items.filter(function(it){ return it.w!==undefined; }).forEach(function(it){
-      var dates=[], dd=new Date(curY,curM,1);
+      var dates=[], wsum=0, dd=new Date(curY,curM,1);
       while(dd.getMonth()===curM){ if(dd.getDay()===it.w) dates.push(dd.getDate()); dd.setDate(dd.getDate()+1); }
       out+='<div class="payday">Каждую неделю · по '+WD[it.w]+'</div>';
       dates.forEach(function(dnum){
         var pid=it.id+"@"+mk+"-"+String(dnum).padStart(2,"0");
-        total+=it.a; if(isPaid(pid)) done+=it.a;
+        var wv=amtOf(it,pid); wsum+=wv;
+        total+=wv; if(isPaid(pid)) done+=wv;
         out+='<div class="payrow'+(isPaid(pid)?" done":"")+'">'+
              '<button class="paychk" data-pid="'+pid+'">'+(isPaid(pid)?"✓":"")+'</button>'+
              '<span class="payname">'+it.n+' <span style="opacity:.5;font-weight:600">· '+dnum+" "+MONG[curM]+'</span></span>'+
-             '<span class="paysum num">'+rubl(it.a)+'</span>'+
+             sumCell(it,pid)+
              (editing?'<button class="paydel" data-del="'+it.id+'">✕</button>':'')+
              '</div>';
       });
-      out+='<div class="paygroup"><span>'+it.n+' · '+dates.length+' раз'+(dates.length===1?"":"а")+
-           '</span><span class="num">'+rubl(it.a*dates.length)+'</span></div>';
+      out+='<div class="paygroup"><span>'+it.n+' · '+dates.length+' '+razy(dates.length)+
+           '</span><span class="num">'+rubl(wsum)+'</span></div>';
     });
     e("paylist").innerHTML=out||'<div class="payhint">Пока пусто — добавь первую выплату.</div>';
     e("pay_done").textContent=rubl(done);
@@ -1445,6 +1483,7 @@ async function pull(){
   }
 
   function shift(n){
+    editAmt=null;
     curM+=n;
     if(curM<0){curM=11;curY--;}
     if(curM>11){curM=0;curY++;}
@@ -1467,6 +1506,35 @@ async function pull(){
       e("payaddform").classList.remove("on");
       psave();render();return;
     }
+    if(t.dataset&&t.dataset.amt!==undefined){      /* тап по сумме — открыть ввод */
+      editAmt=(editAmt===t.dataset.amt)?null:t.dataset.amt;
+      render();
+      var inp=e("amt_in"); if(inp){ inp.focus(); inp.select(); }
+      return;
+    }
+    if(t.dataset&&t.dataset.amtcancel){ editAmt=null; render(); return; }
+    if(t.dataset&&t.dataset.amtsave){
+      var mode=t.dataset.amtsave, pid=t.dataset.pid2;
+      var base=pid.split("@")[0];                  /* у недельных id строки = "domrab@2026-09-16" */
+      var item=null;
+      P.items.forEach(function(x){ if(x.id===base) item=x; });
+      if(mode==="reset"){
+        delete amtMap()[pid];
+      }else{
+        var inp2=e("amt_in"), val=inp2?parseFloat(inp2.value):NaN;
+        if(!(val>=0)){ editAmt=null; render(); return; }
+        if(mode==="always"){
+          if(item) item.a=val;                     /* меняем базовую сумму */
+          delete amtMap()[pid];                    /* разовая правка этого месяца больше не нужна */
+        }else{
+          amtMap()[pid]=val;                       /* только текущий месяц */
+        }
+      }
+      editAmt=null;
+      try{ if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.HapticFeedback)
+             Telegram.WebApp.HapticFeedback.impactOccurred("light"); }catch(_){}
+      psave();render();return;
+    }
     if(t.dataset&&t.dataset.pid){
       var id=t.dataset.pid, arr=paidSet(), i=arr.indexOf(id);
       if(i>=0)arr.splice(i,1); else arr.push(id);
@@ -1479,6 +1547,9 @@ async function pull(){
       P.items=P.items.filter(function(x){return x.id!==did;});
       if(P.del.indexOf(did)<0) P.del.push(did);
       Object.keys(P.paid).forEach(function(k){P.paid[k]=P.paid[k].filter(function(x){return x!==did;});});
+      Object.keys(P.amt||{}).forEach(function(k){
+        Object.keys(P.amt[k]).forEach(function(pid){ if(pid.split("@")[0]===did) delete P.amt[k][pid]; });
+      });
       psave();render();return;
     }
   });
@@ -1492,6 +1563,7 @@ async function pull(){
             /* новые пункты из SEED дочитываем: правки в коде должны доезжать
                к тому, у кого уже сохранён список (урок «Нашего дома») */
             if(!P.del) P.del=[];
+            if(!P.amt) P.amt={};
             SEED.forEach(function(sd){
               if(P.del.indexOf(sd.id)>=0) return;
               if(!P.items.some(function(x){return x.id===sd.id;})) P.items.push(sd);
