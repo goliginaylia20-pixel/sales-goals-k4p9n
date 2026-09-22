@@ -208,6 +208,11 @@
   .payamt .always{background:rgba(106,91,255,.14);color:#6A5BFF}
   .payamt .reset{background:rgba(120,120,160,.14);color:inherit}
   .payamt .x{background:transparent;color:#8a86a0;padding:9px 6px}
+  .payskip{flex:0 0 auto;border:0;background:transparent;color:#b6b2c8;font:inherit;font-size:17px;cursor:pointer;padding:0 2px}
+  .paydel.grp{border:0;background:transparent;color:#E0507A;font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0 0 0 10px}
+  .payskipped{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-4px 0 12px;padding:0 4px;font-size:12px;opacity:.7}
+  .payskipped button{border:0;background:rgba(120,120,160,.14);color:inherit;font:inherit;font-size:12px;font-weight:700;
+    padding:5px 9px;border-radius:9px;cursor:pointer}
   .payhint{font-size:12px;opacity:.55;margin-top:10px;line-height:1.45}
   .pane[hidden]{display:none}
   /* --- расписание --- */
@@ -277,7 +282,7 @@
   <div class="head">
     <h1>Центр управления</h1>
     <div class="sub">Расписание · продажи · выплаты</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 16 · 4 поток</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 17 · 4 поток</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
@@ -314,6 +319,7 @@
       </div>
       <div class="payhint">Галочка ставится на конкретный месяц — в следующем список снова чистый.
         Нажми на сумму, чтобы изменить её: «только в этом месяце» или «всегда».
+        Крестик справа в недельной строке — «не приходила»: неделя уйдёт из суммы, вернуть можно тут же.
         Клодик напомнит утром в день выплаты.</div>
     </div>
   </section>
@@ -1390,10 +1396,11 @@ async function pull(){
     {id:"baha",    d:11, n:"Баха",          a:15000,  g:"Конь"},
     {id:"sveta",   d:26, n:"Света",         a:80000,  g:""},
     {id:"valya",   d:26, n:"Валя",          a:200000, g:"", once:"2026-08"}   /* разовая, только этот месяц */,
-    {id:"domrab",  w:3, n:"Домработница", a:11000,  g:""}   /* каждую среду, w = день недели */
+    {id:"domrab",  w:3, n:"Домработница", a:10000,  g:""}   /* каждую среду, w = день недели */
   ];
-  var P={items:SEED.slice(), paid:{}, del:[], amt:{}};   /* del — что Юля удалила, чтобы SEED не воскрешал;
-                                                            amt["2026-09"][id] — сумма, изменённая на один месяц */
+  var P={items:SEED.slice(), paid:{}, del:[], amt:{}, skip:{}};   /* del — что Юля удалила, чтобы SEED не воскрешал;
+                                                            amt["2026-09"][id] — сумма, изменённая на один месяц;
+                                                            skip["2026-09"] — пропущенные даты недельных выплат */
   var cur=new Date(), curY=cur.getFullYear(), curM=cur.getMonth();
   var editing=false;
   var editAmt=null;   /* id/pid строки, у которой сейчас открыт ввод суммы */
@@ -1408,6 +1415,8 @@ async function pull(){
   function paidSet(){var k=mkey();if(!P.paid[k])P.paid[k]=[];return P.paid[k];}
   function isPaid(id){return paidSet().indexOf(id)>=0;}
   /* сумма строки в текущем месяце: разовая правка перекрывает базовую */
+  function skipSet(){var k=mkey();if(!P.skip)P.skip={};if(!P.skip[k])P.skip[k]=[];return P.skip[k];}
+  function isSkipped(pid){return skipSet().indexOf(pid)>=0;}
   function amtMap(){var k=mkey();if(!P.amt)P.amt={};if(!P.amt[k])P.amt[k]={};return P.amt[k];}
   function hasAmt(pid){var k=mkey();return !!(P.amt&&P.amt[k]&&P.amt[k][pid]!==undefined);}
   function amtOf(it,pid){var k=mkey();return (P.amt&&P.amt[k]&&P.amt[k][pid]!==undefined)?P.amt[k][pid]:it.a;}
@@ -1460,19 +1469,29 @@ async function pull(){
       var dates=[], wsum=0, dd=new Date(curY,curM,1);
       while(dd.getMonth()===curM){ if(dd.getDay()===it.w) dates.push(dd.getDate()); dd.setDate(dd.getDate()+1); }
       out+='<div class="payday">Каждую неделю · по '+WD[it.w]+'</div>';
+      var shown=0, skipped=[];
       dates.forEach(function(dnum){
         var pid=it.id+"@"+mk+"-"+String(dnum).padStart(2,"0");
-        var wv=amtOf(it,pid); wsum+=wv;
+        /* пропущенная неделя: не приходила — строка уходит из списка и из суммы,
+           но вернуть можно одним тапом (см. блок «пропущено» ниже) */
+        if(isSkipped(pid)){ skipped.push({d:dnum,pid:pid}); return; }
+        var wv=amtOf(it,pid); wsum+=wv; shown++;
         total+=wv; if(isPaid(pid)) done+=wv;
         out+='<div class="payrow'+(isPaid(pid)?" done":"")+'">'+
              '<button class="paychk" data-pid="'+pid+'">'+(isPaid(pid)?"✓":"")+'</button>'+
              '<span class="payname">'+it.n+' <span style="opacity:.5;font-weight:600">· '+dnum+" "+MONG[curM]+'</span></span>'+
              sumCell(it,pid)+
-             (editing?'<button class="paydel" data-del="'+it.id+'">✕</button>':'')+
+             '<button class="payskip" data-skip="'+pid+'" title="не приходила">✕</button>'+
              '</div>';
       });
-      out+='<div class="paygroup"><span>'+it.n+' · '+dates.length+' '+razy(dates.length)+
-           '</span><span class="num">'+rubl(wsum)+'</span></div>';
+      out+='<div class="paygroup"><span>'+it.n+' · '+shown+' '+razy(shown)+
+           '</span><span class="num">'+rubl(wsum)+'</span>'+
+           (editing?'<button class="paydel grp" data-del="'+it.id+'">✕ убрать совсем</button>':'')+'</div>';
+      if(skipped.length){
+        out+='<div class="payskipped">Пропущено: '+skipped.map(function(x){
+          return '<button data-unskip="'+x.pid+'">'+x.d+' '+MONG[curM]+' ↺</button>';
+        }).join(" ")+'</div>';
+      }
     });
     e("paylist").innerHTML=out||'<div class="payhint">Пока пусто — добавь первую выплату.</div>';
     e("pay_done").textContent=rubl(done);
@@ -1504,6 +1523,19 @@ async function pull(){
       e("pa_once").checked=false;
       e("pa_day").value="";e("pa_name").value="";e("pa_sum").value="";
       e("payaddform").classList.remove("on");
+      psave();render();return;
+    }
+    if(t.dataset&&t.dataset.skip){
+      var sp=t.dataset.skip, ss=skipSet();
+      if(ss.indexOf(sp)<0) ss.push(sp);
+      var pa=paidSet(), pi=pa.indexOf(sp); if(pi>=0) pa.splice(pi,1);   /* пропущенное не считается оплаченным */
+      try{ if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.HapticFeedback)
+             Telegram.WebApp.HapticFeedback.impactOccurred("light"); }catch(_){}
+      psave();render();return;
+    }
+    if(t.dataset&&t.dataset.unskip){
+      var up=t.dataset.unskip, us=skipSet(), ui=us.indexOf(up);
+      if(ui>=0) us.splice(ui,1);
       psave();render();return;
     }
     if(t.dataset&&t.dataset.amt!==undefined){      /* тап по сумме — открыть ввод */
@@ -1564,6 +1596,15 @@ async function pull(){
                к тому, у кого уже сохранён список (урок «Нашего дома») */
             if(!P.del) P.del=[];
             if(!P.amt) P.amt={};
+            if(!P.skip) P.skip={};
+            /* разовая починка 22.09.2026: в v16 крестик у недельной строки удалял ВЕСЬ пункт.
+               Юля так потеряла домработницу — возвращаем её и ставим актуальные 10 000. */
+            if(!P.fix17){
+              P.fix17=1;
+              var di=P.del.indexOf("domrab"); if(di>=0) P.del.splice(di,1);
+              var dm=null; P.items.forEach(function(x){ if(x.id==="domrab") dm=x; });
+              if(dm) dm.a=10000; else P.items.push({id:"domrab",w:3,n:"Домработница",a:10000,g:""});
+            }
             SEED.forEach(function(sd){
               if(P.del.indexOf(sd.id)>=0) return;
               if(!P.items.some(function(x){return x.id===sd.id;})) P.items.push(sd);
