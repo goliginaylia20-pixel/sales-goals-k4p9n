@@ -282,7 +282,7 @@
   <div class="head">
     <h1>Центр управления</h1>
     <div class="sub">Расписание · продажи · выплаты</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 17 · 4 поток</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 18 · 4 поток</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
@@ -1396,7 +1396,10 @@ async function pull(){
     {id:"baha",    d:11, n:"Баха",          a:15000,  g:"Конь"},
     {id:"sveta",   d:26, n:"Света",         a:80000,  g:""},
     {id:"valya",   d:26, n:"Валя",          a:200000, g:"", once:"2026-08"}   /* разовая, только этот месяц */,
-    {id:"domrab",  w:3, n:"Домработница", a:10000,  g:""}   /* каждую среду, w = день недели */
+    {id:"domrab",  w:2, n:"Домработница", a:10000,  g:"", w0:3, wfrom:"2026-10"}
+    /* w — день недели (2 = вторник). Юля перевела её со сред на вторники 22.09.2026:
+       w0 — как было раньше, wfrom — с какого месяца действует новый день. Так сентябрь
+       остаётся по средам вместе с проставленными галочками, а с октября идут вторники. */
   ];
   var P={items:SEED.slice(), paid:{}, del:[], amt:{}, skip:{}};   /* del — что Юля удалила, чтобы SEED не воскрешал;
                                                             amt["2026-09"][id] — сумма, изменённая на один месяц;
@@ -1465,10 +1468,12 @@ async function pull(){
     /* недельные выплаты: строка на каждую свою дату в этом месяце,
        галочка у каждой отдельно (id вида domrab@2026-08-05) */
     var WD=["воскресеньям","понедельникам","вторникам","средам","четвергам","пятницам","субботам"];
+    /* день недели мог смениться: до wfrom берём прежний w0 */
+    function wdayOf(it){ return (it.wfrom && it.w0!==undefined && mk < it.wfrom) ? it.w0 : it.w; }
     P.items.filter(function(it){ return it.w!==undefined; }).forEach(function(it){
-      var dates=[], wsum=0, dd=new Date(curY,curM,1);
-      while(dd.getMonth()===curM){ if(dd.getDay()===it.w) dates.push(dd.getDate()); dd.setDate(dd.getDate()+1); }
-      out+='<div class="payday">Каждую неделю · по '+WD[it.w]+'</div>';
+      var dates=[], wsum=0, dd=new Date(curY,curM,1), wd=wdayOf(it);
+      while(dd.getMonth()===curM){ if(dd.getDay()===wd) dates.push(dd.getDate()); dd.setDate(dd.getDate()+1); }
+      out+='<div class="payday">Каждую неделю · по '+WD[wd]+'</div>';
       var shown=0, skipped=[];
       dates.forEach(function(dnum){
         var pid=it.id+"@"+mk+"-"+String(dnum).padStart(2,"0");
@@ -1599,12 +1604,21 @@ async function pull(){
             if(!P.skip) P.skip={};
             /* разовая починка 22.09.2026: в v16 крестик у недельной строки удалял ВЕСЬ пункт.
                Юля так потеряла домработницу — возвращаем её и ставим актуальные 10 000. */
+            /* 22.09.2026: домработница перешла со сред на вторники — с октября.
+               Сентябрь не трогаем, там уже проставлены галочки по средам. */
+            if(!P.fix18){
+              P.fix18=1;
+              P.items.forEach(function(x){
+                if(x.id==="domrab" && x.w!==undefined){ x.w0=(x.w0!==undefined?x.w0:x.w); x.w=2; x.wfrom="2026-10"; }
+              });
+            }
             if(!P.fix17){
               P.fix17=1;
               var di=P.del.indexOf("domrab"); if(di>=0) P.del.splice(di,1);
               var dm=null; P.items.forEach(function(x){ if(x.id==="domrab") dm=x; });
-              if(dm) dm.a=10000; else P.items.push({id:"domrab",w:3,n:"Домработница",a:10000,g:""});
+              if(dm) dm.a=10000; else P.items.push({id:"domrab",w:2,n:"Домработница",a:10000,g:"",w0:3,wfrom:"2026-10"});
             }
+            psave();   /* миграции фиксируем сразу, чтобы не пересчитывать их при каждом открытии */
             SEED.forEach(function(sd){
               if(P.del.indexOf(sd.id)>=0) return;
               if(!P.items.some(function(x){return x.id===sd.id;})) P.items.push(sd);
