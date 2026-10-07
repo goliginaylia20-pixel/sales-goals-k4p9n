@@ -282,7 +282,7 @@
   <div class="head">
     <h1>Центр управления</h1>
     <div class="sub">Расписание · продажи · выплаты</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 18 · 4 поток</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 20 · фактические суммы</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
@@ -398,6 +398,73 @@
       <div class="wf"><span>Сумма продаж</span><b class="num" id="g_s1">0 ₽</b></div>
       <div class="wf minus"><span>Налог 8%</span><b class="num" id="t_s1">0 ₽</b></div>
       <div class="wf minus"><span>Комиссия GetCourse 3.5%</span><b class="num" id="c_s1">0 ₽</b></div>
+    </div>
+  </section>
+  <!-- STAGE 2 · Основной курс · 5 поток -->
+  <section class="stage">
+    <div class="st-head">
+      <div>
+        <span class="badge ">Ступень 2 · 5 поток</span>
+        <h2>Основной курс · 5 поток</h2>
+        <div class="price">Считаем с 6 октября · эфир 7-го</div>
+      </div>
+      <div class="ringwrap">
+        <svg width="104" height="104" style="transform:rotate(-90deg)">
+          <defs><linearGradient id="ggE" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2BC7DE"/><stop offset="0.55" stop-color="#6A5BFF"/><stop offset="1" stop-color="#C740F0"/>
+          </linearGradient></defs>
+          <circle class="ring-bg" cx="52" cy="52" r="42" fill="none" stroke-width="11"></circle>
+          <circle class="ring-fg" id="ringE" cx="52" cy="52" r="42" fill="none" stroke="url(#ggE)" stroke-width="11" stroke-linecap="round"></circle>
+        </svg>
+        <div class="lbl"><b id="ringEpct">0%</b><span>К ОПТИМУМУ</span></div>
+      </div>
+    </div>
+    <div class="crow">
+      <div class="crow-lab">Тариф «Claude» · <b>21 990 ₽</b></div>
+      <div class="crow-ctl">
+        <button class="step" data-act="m" data-t="n5a">−</button>
+        <div class="field"><input type="number" id="in_n5a" min="0" value="0"><span class="lab">мест</span></div>
+        <button class="step" data-act="p" data-t="n5a">+</button>
+      </div>
+    </div>
+    <div class="crow">
+      <div class="crow-lab">Тариф «GPT» · <b>21 990 ₽</b></div>
+      <div class="crow-ctl">
+        <button class="step" data-act="m" data-t="n5b">−</button>
+        <div class="field"><input type="number" id="in_n5b" min="0" value="0"><span class="lab">мест</span></div>
+        <button class="step" data-act="p" data-t="n5b">+</button>
+      </div>
+    </div>
+    <div class="crow">
+      <div class="crow-lab">Тариф «Claude + GPT» · <b>29 990 ₽</b></div>
+      <div class="crow-ctl">
+        <button class="step" data-act="m" data-t="n5c">−</button>
+        <div class="field"><input type="number" id="in_n5c" min="0" value="0"><span class="lab">мест</span></div>
+        <button class="step" data-act="p" data-t="n5c">+</button>
+      </div>
+    </div>
+    <div class="revblock">
+      <div class="k">Места · выручка</div>
+      <div class="v num" id="revE">0 ₽</div>
+      <div class="goal">цель-оптимум ≈ <b id="potE">—</b></div>
+      <div class="prepay" id="prepayE" hidden></div>
+    </div>
+    <div class="goalbar"><div class="gb-track"><div class="gb-fill" id="fillE"></div>
+      <i class="tick" id="tEmin"></i><i class="tick" id="tEopt"></i><i class="tick" id="tEmax"></i></div></div>
+    <div class="tiers">
+      <div class="tier min" id="tierEmin"><div class="tn">Минимум</div><div class="tg num">50</div><div class="tp"></div></div>
+      <div class="tier opt" id="tierEopt"><div class="tn">Оптимум</div><div class="tg num">100</div><div class="tp"></div></div>
+      <div class="tier max" id="tierEmax"><div class="tn">Максимум</div><div class="tg num">150</div><div class="tp"></div></div>
+    </div>
+    <div class="pace"><div class="msg" id="msgE"></div><div class="left" id="paceE"></div></div>
+  </section>
+  <section class="profit">
+    <div class="p-title">Прибыль · 5 поток</div>
+    <div class="p-net num" id="n_E">0 ₽</div>
+    <div class="waterfall">
+      <div class="wf"><span>Сумма продаж</span><b class="num" id="g_E">0 ₽</b></div>
+      <div class="wf minus"><span>Налог 8%</span><b class="num" id="t_E">0 ₽</b></div>
+      <div class="wf minus"><span>Комиссия GetCourse 3.5%</span><b class="num" id="c_E">0 ₽</b></div>
     </div>
   </section>
   <!-- STAGE 2 · Основной курс · 4 поток -->
@@ -704,12 +771,24 @@ const S1={price:990,min:500,opt:750,max:1000,sup:1250,ult:1500,leg:1750,deadline
 const S2={p1:14990,p2:19990,min:50,opt:100,max:150};
 const S3={p:21990};   /* у 3 потока один тариф — «с поддержкой» 21 990 */
 const S4={claude:21990, gpt:21990, combo:29990};   /* три тарифа 4 потока (Юля, 14.09) */
+const S5={claude:21990, gpt:21990, combo:29990};   /* 5 поток: цены с лендинга claude2, 07.10 */
 const S2A_START="2026-07-29";
 const S2C_START="2026-08-10";   /* 3 поток: с этого дня заказы считаем третьим потоком */
-const S2D_START="2026-09-06";   /* 4 поток: первый заказ, продажи уже идут */
+const S2D_START="2026-09-06";   /* 4 поток: первый заказ */
+const S2E_START="2026-10-06";   /* 5 поток: с этого дня заказы считаем пятым потоком, эфир 07.10 */
 const KEY="tseli-prodazh-v3", OLDKEY="tseli-prodazh-v2";
 const MEM={};
-let st={s1:0,n4a:0,n4b:0,n4c:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};
+/* Фактические суммы из выгрузки GetCourse: ключ — префикс блока, значение {places,rev}.
+   Апп раньше считал «мест x цена по прайсу» и завышал выручку там, где люди брали
+   по скидке (4 поток: 5 558 000 по прайсу против 4 822 000 фактических).
+   Берём факт, но только пока число мест совпадает с фидом — если Юля правит мест
+   вручную кнопками, возвращаемся к расчёту по прайсу, иначе сумма бы не реагировала. */
+const FACT={};
+function gross(x,places,byPrice){
+ const f=FACT[x];
+ return (f && f.places===places && typeof f.rev==="number") ? f.rev : byPrice;
+}
+let st={s1:0,n5a:0,n5b:0,n5c:0,n4a:0,n4b:0,n4c:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};
 
 const $=id=>document.getElementById(id);
 const rub=n=>Math.round(n).toLocaleString("ru-RU")+" ₽";
@@ -775,7 +854,7 @@ function renderStream(x,places,gross,active,start,label,avg0){
 }
 
 function render(){
- const c1=st.s1, g1=c1*S1.price;
+ const c1=st.s1, g1=gross("s1",c1,c1*S1.price);
  $("rev1").textContent=rub(g1);
  $("pot1").textContent=rub(S1.opt*S1.price);
  setRing("ring1","ring1pct",c1/S1.opt);
@@ -800,34 +879,37 @@ function render(){
  else p1="Осталось <b>"+d1+" дн.</b> до 29 июля. Для оптимума — ~<b>"+per1+" продаж/день</b>.";
  $("pace1").innerHTML=p1;
 
- const pd=st.n4a+st.n4b+st.n4c, gd=st.n4a*S4.claude+st.n4b*S4.gpt+st.n4c*S4.combo;
- renderStream("D",pd,gd,true,S2D_START,"15 сентября",(S4.claude+S4.gpt+S4.combo)/3);
- const pc=st.n3b, gc=st.n3b*S3.p;   /* тарифа «сам» у 3 потока нет */
+ const pe=st.n5a+st.n5b+st.n5c, ge=gross("E",pe,st.n5a*S5.claude+st.n5b*S5.gpt+st.n5c*S5.combo);
+ renderStream("E",pe,ge,true,S2E_START,"7 октября",(S5.claude+S5.gpt+S5.combo)/3);
+ const pd=st.n4a+st.n4b+st.n4c, gd=gross("D",pd,st.n4a*S4.claude+st.n4b*S4.gpt+st.n4c*S4.combo);
+ renderStream("D",pd,gd,false,S2D_START,"15 сентября",(S4.claude+S4.gpt+S4.combo)/3);
+ const pc=st.n3b, gc=gross("C",pc,st.n3b*S3.p);   /* тарифа «сам» у 3 потока нет */
  renderStream("C",pc,gc,false,S2C_START,"10 августа");
- const pa=st.n2a+st.n2b, ga=st.n2a*S2.p1+st.n2b*S2.p2;
+ const pa=st.n2a+st.n2b, ga=gross("A",pa,st.n2a*S2.p1+st.n2b*S2.p2);
  renderStream("A",pa,ga,true);
- const pb=st.n1a+st.n1b, gb=st.n1a*S2.p1+st.n1b*S2.p2;
+ const pb=st.n1a+st.n1b, gb=gross("B",pb,st.n1a*S2.p1+st.n1b*S2.p2);
  renderStream("B",pb,gb,false);
 
  profit("s1",g1);
+ profit("E",ge);
  profit("D",gd);
  profit("C",gc);
  profit("A",ga);
  profit("B",gb);
- profit("all",g1+gd+gc+ga+gb);
+ profit("all",g1+ge+gd+gc+ga+gb);
 
  $("s1sold").textContent=c1;
  $("s1rev").textContent=rub(g1);
- $("s2sold").textContent=(pc+pa+pb);
- $("s2rev").textContent=rub(gc+ga+gb);
+ $("s2sold").textContent=(pe+pd+pc+pa+pb);
+ $("s2rev").textContent=rub(ge+gd+gc+ga+gb);
 }
 
-function syncInputs(){["s1","n4a","n4b","n4c","n3b","n2a","n2b","n1a","n1b"].forEach(k=>{const el=$("in_"+k);if(el)el.value=st[k]||0;});}
+function syncInputs(){["s1","n5a","n5b","n5c","n4a","n4b","n4c","n3b","n2a","n2b","n1a","n1b"].forEach(k=>{const el=$("in_"+k);if(el)el.value=st[k]||0;});}
 
 document.addEventListener("click",e=>{
  const b=e.target.closest(".step");
  if(b){const k=b.dataset.t;st[k]=Math.max(0,(st[k]||0)+(b.dataset.act==="p"?1:-1));const el=$("in_"+k);if(el)el.value=st[k];save();render();return;}
- if(e.target.id==="reset"){let ok=true;try{ok=window.confirm("Обнулить все числа?");}catch(_){}if(ok){st={s1:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};syncInputs();save();render();}return;}
+ if(e.target.id==="reset"){let ok=true;try{ok=window.confirm("Обнулить все числа?");}catch(_){}if(ok){st={s1:0,n5a:0,n5b:0,n5c:0,n4a:0,n4b:0,n4c:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};syncInputs();save();render();}return;}
 });
 document.addEventListener("input",e=>{const el=e.target;if(el.id&&el.id.indexOf("in_")===0){const k=el.id.slice(3);st[k]=Math.max(0,parseInt(el.value)||0);save();render();}});
 
@@ -871,6 +953,7 @@ function renderPrepay(d){
  prepayLine("prepayA", d && d.course_2);
  prepayLine("prepayC", d && d.course_3);
  prepayLine("prepayD", d && d.course_4);
+ prepayLine("prepayE", d && d.course_5);
 }
 
 async function pull(){
@@ -879,7 +962,9 @@ async function pull(){
   if(!r.ok) throw new Error(r.status);
   const d=await r.json();
   if(d && d.dashboard){
-   ["s1","n1a","n1b","n2a","n2b","n3a","n3b","n4a","n4b","n4c"].forEach(k=>{const v=d.dashboard[k];if(typeof v==="number")st[k]=v;});
+   ["s1","n1a","n1b","n2a","n2b","n3a","n3b","n4a","n4b","n4c","n5a","n5b","n5c"].forEach(k=>{const v=d.dashboard[k];if(typeof v==="number")st[k]=v;});
+   [["s1",d.tripwire],["B",d.course_1],["A",d.course_2],["C",d.course_3],["D",d.course_4],["E",d.course_5]]
+     .forEach(([x,c])=>{if(c&&typeof c.revenue==="number"&&typeof c.paid==="number")FACT[x]={places:c.paid,rev:c.revenue};});
    syncInputs();render();save();renderPrepay(d);renderToday(d);
    stamp("из GetCourse · обновлено "+(d.updated_at||"")+" МСК");
   }
