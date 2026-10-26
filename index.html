@@ -43,7 +43,8 @@
   .sm-total{position:relative;z-index:1}
   .sm-total .k{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;opacity:.88;font-weight:700}
   .sm-total .v{font-size:38px;font-weight:800;line-height:1.02;margin-top:5px;letter-spacing:-1px}
-  .sm-stages{display:flex;gap:10px;margin-top:16px;position:relative;z-index:1}
+  .sm-stages{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;position:relative;z-index:1}
+  .sm-stages .sm-st{flex:1 1 30%}
   .sm-st{flex:1;min-width:0;background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.26);
     border-radius:16px;padding:13px 14px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
   .sm-st .t{font-size:10px;letter-spacing:.6px;text-transform:uppercase;opacity:.9;font-weight:700}
@@ -282,7 +283,7 @@
   <div class="head">
     <h1>Центр управления</h1>
     <div class="sub">Расписание · продажи · выплаты</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 21 · после комиссии</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 22 · нейронки 2.0</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
@@ -290,6 +291,7 @@
     <button class="tab" data-tab="sched">📅 Расписание</button>
     <button class="tab on" data-tab="sales">💰 Продажи</button>
     <button class="tab" data-tab="pay">💸 Выплаты</button>
+    <button class="tab" data-tab="vision">✧ Видение</button>
   </div>
 
   <section class="pane" id="pane-pay" hidden>
@@ -347,13 +349,61 @@
     <div class="tf" id="tdfoot"></div>
   </section>
 
-  <!-- STAGE 1 -->
+  <!-- STAGE 1b · ТРИПВАЙЕР 2.0 (идёт с 12.10.2026, 1490 ₽) -->
   <section class="stage">
     <div class="st-head">
       <div>
         <span class="badge">Ступень 1 · идёт</span>
-        <h2>Как приручить Claude</h2>
-        <div class="price">990 ₽ · продажи всё лето, цель до 29 июля</div>
+        <h2>Как приручить нейронки 2.0</h2>
+        <div class="price">1490 ₽ · продажи с 12 октября</div>
+      </div>
+      <div class="ringwrap">
+        <svg width="104" height="104" style="transform:rotate(-90deg)">
+          <defs><linearGradient id="g1b" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2BC7DE"/><stop offset="0.55" stop-color="#6A5BFF"/><stop offset="1" stop-color="#C740F0"/>
+          </linearGradient></defs>
+          <circle class="ring-bg" cx="52" cy="52" r="42" fill="none" stroke-width="11"></circle>
+          <circle class="ring-fg" id="ring1b" cx="52" cy="52" r="42" fill="none" stroke="url(#g1b)" stroke-width="11" stroke-linecap="round"></circle>
+        </svg>
+        <div class="lbl"><b id="ring1bpct">0%</b><span>К ОПТИМУМУ</span></div>
+      </div>
+    </div>
+    <div class="crow">
+      <div class="crow-lab">Продано · <b>1490 ₽</b></div>
+      <div class="crow-ctl">
+        <button class="step" data-act="m" data-t="s1b">−</button>
+        <div class="field"><input type="number" id="in_s1b" min="0" value="0"><span class="lab">продаж</span></div>
+        <button class="step" data-act="p" data-t="s1b">+</button>
+      </div>
+    </div>
+    <div class="revblock">
+      <div class="k">Выручка · нейронки 2.0</div>
+      <div class="v num" id="rev1b">0 ₽</div>
+      <div class="goal">цель-оптимум ≈ <b id="pot1b">—</b></div>
+    </div>
+    <div class="goalbar"><div class="gb-track"><div class="gb-fill" id="fill1b"></div>
+      <i class="tick" id="t1bmin"></i><i class="tick" id="t1bopt"></i><i class="tick" id="t1bmax"></i><i class="tick" id="t1bsup"></i><i class="tick" id="t1bult"></i><i class="tick" id="t1bleg"></i></div></div>
+    <div class="tiers six">
+      <div class="tier min" id="tier1bmin"><div class="tn">Минимум</div><div class="tg num">150</div><div class="tp"></div></div><div class="tier opt" id="tier1bopt"><div class="tn">Оптимум</div><div class="tg num">300</div><div class="tp"></div></div><div class="tier max" id="tier1bmax"><div class="tn">Максимум</div><div class="tg num">500</div><div class="tp"></div></div><div class="tier sup" id="tier1bsup"><div class="tn">Супер</div><div class="tg num">750</div><div class="tp"></div></div><div class="tier ult" id="tier1bult"><div class="tn">Ультра</div><div class="tg num">1000</div><div class="tp"></div></div><div class="tier leg" id="tier1bleg"><div class="tn">Легенда</div><div class="tg num">1500</div><div class="tp"></div></div>
+    </div>
+    <div class="pace"><div class="msg" id="msg1b"></div><div class="left" id="pace1b"></div></div>
+  </section>
+  <section class="profit">
+    <div class="p-title">Прибыль · нейронки 2.0</div>
+    <div class="p-net num" id="n_s1b">0 ₽</div>
+    <div class="waterfall">
+      <div class="wf"><span>Сумма заказов</span><b class="num" id="g_s1b">0 ₽</b></div>
+      <div class="wf minus"><span>Налог 8%</span><b class="num" id="t_s1b">0 ₽</b></div>
+      <div class="wf minus"><span>Комиссия платёжной системы</span><b class="num" id="c_s1b">0 ₽</b></div>
+    </div>
+  </section>
+  <!-- STAGE 1 · закрытые версии трипвайера -->
+  <section class="stage">
+    <div class="st-head">
+      <div>
+        <span class="badge">Ступень 1 · завершён</span>
+        <h2>Как приручить Claude + нейронки</h2>
+        <div class="price">990 ₽ и 1111 ₽ · продажи закрыты 15 октября</div>
       </div>
       <div class="ringwrap">
         <svg width="104" height="104" style="transform:rotate(-90deg)">
@@ -375,7 +425,7 @@
       </div>
     </div>
     <div class="revblock">
-      <div class="k">Выручка · Claude</div>
+      <div class="k">Выручка · Claude + нейронки</div>
       <div class="v num" id="rev1">0 ₽</div>
       <div class="goal">цель-оптимум ≈ <b id="pot1">—</b></div>
     </div>
@@ -392,7 +442,7 @@
     <div class="pace"><div class="msg" id="msg1"></div><div class="left" id="pace1"></div></div>
   </section>
   <section class="profit">
-    <div class="p-title">Прибыль · Ступень 1 · Claude</div>
+    <div class="p-title">Прибыль · Claude + нейронки</div>
     <div class="p-net num" id="n_s1">0 ₽</div>
     <div class="waterfall">
       <div class="wf"><span>Сумма заказов</span><b class="num" id="g_s1">0 ₽</b></div>
@@ -713,7 +763,8 @@
       <div class="wf minus"><span>Комиссия платёжной системы</span><b class="num" id="c_all">0 ₽</b></div>
     </div>
     <div class="sm-stages">
-      <div class="sm-st"><div class="t">Claude · продаж</div><div class="n"><span class="num" id="s1sold">0</span></div><div class="r num" id="s1rev">0 ₽</div></div>
+      <div class="sm-st"><div class="t">Нейронки 2.0</div><div class="n"><span class="num" id="s1bsold">0</span></div><div class="r num" id="s1brev">0 ₽</div></div>
+      <div class="sm-st"><div class="t">Трипвайер · архив</div><div class="n"><span class="num" id="s1sold">0</span></div><div class="r num" id="s1rev">0 ₽</div></div>
       <div class="sm-st"><div class="t">Курс · мест</div><div class="n"><span class="num" id="s2sold">0</span></div><div class="r num" id="s2rev">0 ₽</div></div>
     </div>
     <div class="moneynote">Крупные суммы — то, что пришло на счёт после комиссии платёжной системы (факт из GetCourse). Комиссия фактическая, налог 8% считается от суммы заказов.</div>
@@ -768,6 +819,10 @@ window.storage = {
 
 const TAX=0.08, COMM=0.035;
 const S1={price:990,min:500,opt:750,max:1000,sup:1250,ult:1500,leg:1750,deadline:"2026-07-29"};
+/* Трипвайер 2.0 — третья версия первой ступени (1490 ₽, продажи с 12.10.2026).
+   Ступени целей поставила я по темпу первых двух недель (66 продаж за 14 дней);
+   Юля может их переназначить. */
+const S1B={price:1490,min:150,opt:300,max:500,sup:750,ult:1000,leg:1500,start:"2026-10-12"};
 const S2={p1:14990,p2:19990,min:50,opt:100,max:150};
 const S3={p:21990};   /* у 3 потока один тариф — «с поддержкой» 21 990 */
 const S4={claude:21990, gpt:21990, combo:29990};   /* три тарифа 4 потока (Юля, 14.09) */
@@ -794,7 +849,7 @@ function recvOf(x,places,g){
  const f=FACT[x];
  return (f && f.places===places && typeof f.recv==="number") ? f.recv : g*(1-COMM);
 }
-let st={s1:0,n5a:0,n5b:0,n5c:0,n4a:0,n4b:0,n4c:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};
+let st={s1:0,s1b:0,n5a:0,n5b:0,n5c:0,n4a:0,n4b:0,n4c:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};
 
 const $=id=>document.getElementById(id);
 const rub=n=>Math.round(n).toLocaleString("ru-RU")+" ₽";
@@ -817,6 +872,16 @@ function profit(pfx,g,recv){
  $("n_"+pfx).textContent=rub(r-tax);
 }
 
+/* то же, что msgS1, но для любого набора ступеней — используется трипвайером 2.0 */
+function msgTiers(S,cur){
+ if(cur>=S.leg)return{win:true,msg:"👑 Легенда взята!"};
+ if(cur>=S.ult)return{win:true,msg:"💎 Ультра взята! До легенды +"+(S.leg-cur)};
+ if(cur>=S.sup)return{win:true,msg:"🚀 Супер взят! До ультры +"+(S.ult-cur)};
+ if(cur>=S.max)return{win:true,msg:"🔥 Максимум! До супера +"+(S.sup-cur)};
+ if(cur>=S.opt)return{win:true,msg:"🎉 Оптимум взят! До максимума +"+(S.max-cur)};
+ if(cur>=S.min)return{win:true,msg:"✅ Минимум есть. До оптимума +"+(S.opt-cur)};
+ return{win:false,msg:"До минимума ещё "+(S.min-cur)+" продаж"};
+}
 function msgS1(cur){
  if(cur>=S1.leg)return{win:true,msg:"👑 Легенда взята!"};
  if(cur>=S1.ult)return{win:true,msg:"💎 Ультра взята! До легенды +"+(S1.leg-cur)};
@@ -889,12 +954,26 @@ function render(){
  tierCard("tier1ult","t1ult",S1.ult,c1);
  tierCard("tier1leg","t1leg",S1.leg,c1);
  const m1=msgS1(c1);$("msg1").textContent=m1.msg;$("msg1").classList.toggle("win",m1.win);
- const d1=daysTo(S1.deadline), need1=Math.max(S1.opt-c1,0), per1=d1>0?Math.ceil(need1/d1):need1;
- let p1;
- if(d1<0) p1="Срок до 29 июля вышел";
- else if(need1===0) p1="Осталось <b>"+d1+" дн.</b> · оптимум взят 🎉";
- else p1="Осталось <b>"+d1+" дн.</b> до 29 июля. Для оптимума — ~<b>"+per1+" продаж/день</b>.";
- $("pace1").innerHTML=p1;
+ /* обе прежние версии трипвайера закрыты (последняя оплата 15.10.2026) — вместо срока показываем итог */
+ $("pace1").innerHTML="Продажи закрыты · итог <b>"+c1+"</b> продаж";
+
+ /* ТРИПВАЙЕР 2.0 */
+ const c1b=st.s1b, g1b=gross("s1b",c1b,c1b*S1B.price), r1b=recvOf("s1b",c1b,g1b);
+ $("rev1b").textContent=rub(r1b);
+ $("pot1b").textContent=rub(S1B.opt*S1B.price);
+ setRing("ring1b","ring1bpct",c1b/S1B.opt);
+ $("fill1b").style.width=Math.min(c1b/S1B.leg*100,100)+"%";
+ ["min","opt","max","sup","ult"].forEach(k=>{const el=$("t1b"+k);if(el)el.style.left=S1B[k]/S1B.leg*100+"%";});
+ $("t1bleg").style.left="100%";
+ ["min","opt","max","sup","ult","leg"].forEach(k=>tierCard("tier1b"+k,"t1b"+k,S1B[k],c1b));
+ const m1b=msgTiers(S1B,c1b);$("msg1b").textContent=m1b.msg;$("msg1b").classList.toggle("win",m1b.win);
+ /* у 2.0 нет дедлайна — показываем темп: сколько идёт и сколько продаж в день */
+ const dz=Math.max(1,Math.ceil((Date.now()-new Date(S1B.start+"T00:00:00"))/86400000));
+ const vd=c1b/dz, needB=Math.max(S1B.opt-c1b,0);
+ let p1b="Идут <b>"+dz+" дн.</b> · ~<b>"+vd.toFixed(1)+"</b> продаж/день";
+ if(needB===0) p1b+=" · оптимум взят 🎉";
+ else if(vd>0) p1b+=" · до оптимума ~<b>"+Math.ceil(needB/vd)+" дн.</b>";
+ $("pace1b").innerHTML=p1b;
 
  const pe=st.n5a+st.n5b+st.n5c, ge=gross("E",pe,st.n5a*S5.claude+st.n5b*S5.gpt+st.n5c*S5.combo);
  const re=recvOf("E",pe,ge);
@@ -913,25 +992,28 @@ function render(){
  renderStream("B",pb,gb,false,null,null,0,rb);
 
  profit("s1",g1,r1);
+ profit("s1b",g1b,r1b);
  profit("E",ge,re);
  profit("D",gd,rd);
  profit("C",gc,rc);
  profit("A",ga,ra);
  profit("B",gb,rb);
- profit("all",g1+ge+gd+gc+ga+gb,r1+re+rd+rc+ra+rb);
+ profit("all",g1+g1b+ge+gd+gc+ga+gb,r1+r1b+re+rd+rc+ra+rb);
 
  $("s1sold").textContent=c1;
  $("s1rev").textContent=rub(r1);
+ $("s1bsold").textContent=c1b;
+ $("s1brev").textContent=rub(r1b);
  $("s2sold").textContent=(pe+pd+pc+pa+pb);
  $("s2rev").textContent=rub(re+rd+rc+ra+rb);
 }
 
-function syncInputs(){["s1","n5a","n5b","n5c","n4a","n4b","n4c","n3b","n2a","n2b","n1a","n1b"].forEach(k=>{const el=$("in_"+k);if(el)el.value=st[k]||0;});}
+function syncInputs(){["s1","s1b","n5a","n5b","n5c","n4a","n4b","n4c","n3b","n2a","n2b","n1a","n1b"].forEach(k=>{const el=$("in_"+k);if(el)el.value=st[k]||0;});}
 
 document.addEventListener("click",e=>{
  const b=e.target.closest(".step");
  if(b){const k=b.dataset.t;st[k]=Math.max(0,(st[k]||0)+(b.dataset.act==="p"?1:-1));const el=$("in_"+k);if(el)el.value=st[k];save();render();return;}
- if(e.target.id==="reset"){let ok=true;try{ok=window.confirm("Обнулить все числа?");}catch(_){}if(ok){st={s1:0,n5a:0,n5b:0,n5c:0,n4a:0,n4b:0,n4c:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};syncInputs();save();render();}return;}
+ if(e.target.id==="reset"){let ok=true;try{ok=window.confirm("Обнулить все числа?");}catch(_){}if(ok){st={s1:0,s1b:0,n5a:0,n5b:0,n5c:0,n4a:0,n4b:0,n4c:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};syncInputs();save();render();}return;}
 });
 document.addEventListener("input",e=>{const el=e.target;if(el.id&&el.id.indexOf("in_")===0){const k=el.id.slice(3);st[k]=Math.max(0,parseInt(el.value)||0);save();render();}});
 
@@ -984,8 +1066,8 @@ async function pull(){
   if(!r.ok) throw new Error(r.status);
   const d=await r.json();
   if(d && d.dashboard){
-   ["s1","n1a","n1b","n2a","n2b","n3a","n3b","n4a","n4b","n4c","n5a","n5b","n5c"].forEach(k=>{const v=d.dashboard[k];if(typeof v==="number")st[k]=v;});
-   [["s1",d.tripwire],["B",d.course_1],["A",d.course_2],["C",d.course_3],["D",d.course_4],["E",d.course_5]]
+   ["s1","s1b","n1a","n1b","n2a","n2b","n3a","n3b","n4a","n4b","n4c","n5a","n5b","n5c"].forEach(k=>{const v=d.dashboard[k];if(typeof v==="number")st[k]=v;});
+   [["s1",d.tripwire],["s1b",d.tripwire_2],["B",d.course_1],["A",d.course_2],["C",d.course_3],["D",d.course_4],["E",d.course_5]]
      .forEach(([x,c])=>{if(c&&typeof c.revenue==="number"&&typeof c.paid==="number")FACT[x]={places:c.paid,rev:c.revenue,recv:(typeof c.received==="number"?c.received:null)};});
    syncInputs();render();save();renderPrepay(d);renderToday(d);
    stamp("из GetCourse · обновлено "+(d.updated_at||"")+" МСК");
@@ -1354,6 +1436,10 @@ async function pull(){
   document.addEventListener("click", function(e){
     var t = e.target.closest ? e.target.closest(".tab,#sendsched,#moredays") : null;
     if(!t) return;
+    /* «Видение» — отдельная страница в том же мини-аппе (vision.html): цели и
+       визуализации весят полмегабайта картинок, держать их внутри этой вкладки
+       значит тормозить открытие продаж и расписания каждый раз. */
+    if(t.dataset.tab==="vision"){ location.href="vision.html?v=1"; return; }
     if(t.classList.contains("tab")) showTab(t.dataset.tab);
     else if(t.id==="moredays"){
       shown += 7;
