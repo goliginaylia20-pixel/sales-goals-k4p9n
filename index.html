@@ -283,7 +283,7 @@
   <div class="head">
     <h1>Центр управления</h1>
     <div class="sub">Расписание · продажи · выплаты</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 23 · нейронки 2.0 + видение</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 24 · 6 поток</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
@@ -450,13 +450,80 @@
       <div class="wf minus"><span>Комиссия платёжной системы</span><b class="num" id="c_s1">0 ₽</b></div>
     </div>
   </section>
+  <!-- STAGE 2 · Основной курс · 6 поток -->
+  <section class="stage">
+    <div class="st-head">
+      <div>
+        <span class="badge ">Ступень 2 · 6 поток</span>
+        <h2>Основной курс · 6 поток</h2>
+        <div class="price">Считаем с 20 октября · эфир 10 ноября</div>
+      </div>
+      <div class="ringwrap">
+        <svg width="104" height="104" style="transform:rotate(-90deg)">
+          <defs><linearGradient id="ggF" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2BC7DE"/><stop offset="0.55" stop-color="#6A5BFF"/><stop offset="1" stop-color="#C740F0"/>
+          </linearGradient></defs>
+          <circle class="ring-bg" cx="52" cy="52" r="42" fill="none" stroke-width="11"></circle>
+          <circle class="ring-fg" id="ringF" cx="52" cy="52" r="42" fill="none" stroke="url(#ggF)" stroke-width="11" stroke-linecap="round"></circle>
+        </svg>
+        <div class="lbl"><b id="ringFpct">0%</b><span>К ОПТИМУМУ</span></div>
+      </div>
+    </div>
+    <div class="crow">
+      <div class="crow-lab">Тариф «Claude» · <b>21 990 ₽</b></div>
+      <div class="crow-ctl">
+        <button class="step" data-act="m" data-t="n6a">−</button>
+        <div class="field"><input type="number" id="in_n6a" min="0" value="0"><span class="lab">мест</span></div>
+        <button class="step" data-act="p" data-t="n6a">+</button>
+      </div>
+    </div>
+    <div class="crow">
+      <div class="crow-lab">Тариф «GPT» · <b>21 990 ₽</b></div>
+      <div class="crow-ctl">
+        <button class="step" data-act="m" data-t="n6b">−</button>
+        <div class="field"><input type="number" id="in_n6b" min="0" value="0"><span class="lab">мест</span></div>
+        <button class="step" data-act="p" data-t="n6b">+</button>
+      </div>
+    </div>
+    <div class="crow">
+      <div class="crow-lab">Тариф «Claude + GPT» · <b>29 990 ₽</b></div>
+      <div class="crow-ctl">
+        <button class="step" data-act="m" data-t="n6c">−</button>
+        <div class="field"><input type="number" id="in_n6c" min="0" value="0"><span class="lab">мест</span></div>
+        <button class="step" data-act="p" data-t="n6c">+</button>
+      </div>
+    </div>
+    <div class="revblock">
+      <div class="k">Места · на счёт после комиссии</div>
+      <div class="v num" id="revF">0 ₽</div>
+      <div class="goal">цель-оптимум ≈ <b id="potF">—</b></div>
+      <div class="prepay" id="prepayF" hidden></div>
+    </div>
+    <div class="goalbar"><div class="gb-track"><div class="gb-fill" id="fillF"></div>
+      <i class="tick" id="tFmin"></i><i class="tick" id="tFopt"></i><i class="tick" id="tFmax"></i></div></div>
+    <div class="tiers">
+      <div class="tier min" id="tierFmin"><div class="tn">Минимум</div><div class="tg num">50</div><div class="tp"></div></div>
+      <div class="tier opt" id="tierFopt"><div class="tn">Оптимум</div><div class="tg num">100</div><div class="tp"></div></div>
+      <div class="tier max" id="tierFmax"><div class="tn">Максимум</div><div class="tg num">150</div><div class="tp"></div></div>
+    </div>
+    <div class="pace"><div class="msg" id="msgF"></div><div class="left" id="paceF"></div></div>
+  </section>
+  <section class="profit">
+    <div class="p-title">Прибыль · 6 поток</div>
+    <div class="p-net num" id="n_F">0 ₽</div>
+    <div class="waterfall">
+      <div class="wf"><span>Сумма заказов</span><b class="num" id="g_F">0 ₽</b></div>
+      <div class="wf minus"><span>Налог 8%</span><b class="num" id="t_F">0 ₽</b></div>
+      <div class="wf minus"><span>Комиссия платёжной системы</span><b class="num" id="c_F">0 ₽</b></div>
+    </div>
+  </section>
   <!-- STAGE 2 · Основной курс · 5 поток -->
   <section class="stage">
     <div class="st-head">
       <div>
         <span class="badge ">Ступень 2 · 5 поток</span>
         <h2>Основной курс · 5 поток</h2>
-        <div class="price">Считаем с 6 октября · эфир 7-го</div>
+        <div class="price">Продажи закрыты 19 октября · обучение идёт</div>
       </div>
       <div class="ringwrap">
         <svg width="104" height="104" style="transform:rotate(-90deg)">
@@ -827,10 +894,12 @@ const S2={p1:14990,p2:19990,min:50,opt:100,max:150};
 const S3={p:21990};   /* у 3 потока один тариф — «с поддержкой» 21 990 */
 const S4={claude:21990, gpt:21990, combo:29990};   /* три тарифа 4 потока (Юля, 14.09) */
 const S5={claude:21990, gpt:21990, combo:29990};   /* 5 поток: цены с лендинга claude2, 07.10 */
+const S6={claude:21990, gpt:21990, combo:29990};   /* 6 поток: базовые цены вернулись после дедлайна 5-го */
 const S2A_START="2026-07-29";
 const S2C_START="2026-08-10";   /* 3 поток: с этого дня заказы считаем третьим потоком */
 const S2D_START="2026-09-06";   /* 4 поток: первый заказ */
 const S2E_START="2026-10-06";   /* 5 поток: с этого дня заказы считаем пятым потоком, эфир 07.10 */
+const S2F_START="2026-10-20";   /* 6 поток: с этого дня цены снова базовые, эфир 10.11, старт обучения 16.11 */
 const KEY="tseli-prodazh-v3", OLDKEY="tseli-prodazh-v2";
 const MEM={};
 /* Фактические суммы из выгрузки GetCourse: ключ — префикс блока, значение {places,rev}.
@@ -849,7 +918,7 @@ function recvOf(x,places,g){
  const f=FACT[x];
  return (f && f.places===places && typeof f.recv==="number") ? f.recv : g*(1-COMM);
 }
-let st={s1:0,s1b:0,n5a:0,n5b:0,n5c:0,n4a:0,n4b:0,n4c:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};
+let st={s1:0,s1b:0,n6a:0,n6b:0,n6c:0,n5a:0,n5b:0,n5c:0,n4a:0,n4b:0,n4c:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};
 
 const $=id=>document.getElementById(id);
 const rub=n=>Math.round(n).toLocaleString("ru-RU")+" ₽";
@@ -975,9 +1044,12 @@ function render(){
  else if(vd>0) p1b+=" · до оптимума ~<b>"+Math.ceil(needB/vd)+" дн.</b>";
  $("pace1b").innerHTML=p1b;
 
+ const pf=st.n6a+st.n6b+st.n6c, gf=gross("F",pf,st.n6a*S6.claude+st.n6b*S6.gpt+st.n6c*S6.combo);
+ const rf=recvOf("F",pf,gf);
+ renderStream("F",pf,gf,true,S2F_START,"20 октября",(S6.claude+S6.gpt+S6.combo)/3,rf);
  const pe=st.n5a+st.n5b+st.n5c, ge=gross("E",pe,st.n5a*S5.claude+st.n5b*S5.gpt+st.n5c*S5.combo);
  const re=recvOf("E",pe,ge);
- renderStream("E",pe,ge,true,S2E_START,"7 октября",(S5.claude+S5.gpt+S5.combo)/3,re);
+ renderStream("E",pe,ge,false,S2E_START,"7 октября",(S5.claude+S5.gpt+S5.combo)/3,re);
  const pd=st.n4a+st.n4b+st.n4c, gd=gross("D",pd,st.n4a*S4.claude+st.n4b*S4.gpt+st.n4c*S4.combo);
  const rd=recvOf("D",pd,gd);
  renderStream("D",pd,gd,false,S2D_START,"15 сентября",(S4.claude+S4.gpt+S4.combo)/3,rd);
@@ -993,27 +1065,28 @@ function render(){
 
  profit("s1",g1,r1);
  profit("s1b",g1b,r1b);
+ profit("F",gf,rf);
  profit("E",ge,re);
  profit("D",gd,rd);
  profit("C",gc,rc);
  profit("A",ga,ra);
  profit("B",gb,rb);
- profit("all",g1+g1b+ge+gd+gc+ga+gb,r1+r1b+re+rd+rc+ra+rb);
+ profit("all",g1+g1b+gf+ge+gd+gc+ga+gb,r1+r1b+rf+re+rd+rc+ra+rb);
 
  $("s1sold").textContent=c1;
  $("s1rev").textContent=rub(r1);
  $("s1bsold").textContent=c1b;
  $("s1brev").textContent=rub(r1b);
- $("s2sold").textContent=(pe+pd+pc+pa+pb);
- $("s2rev").textContent=rub(re+rd+rc+ra+rb);
+ $("s2sold").textContent=(pf+pe+pd+pc+pa+pb);
+ $("s2rev").textContent=rub(rf+re+rd+rc+ra+rb);
 }
 
-function syncInputs(){["s1","s1b","n5a","n5b","n5c","n4a","n4b","n4c","n3b","n2a","n2b","n1a","n1b"].forEach(k=>{const el=$("in_"+k);if(el)el.value=st[k]||0;});}
+function syncInputs(){["s1","s1b","n6a","n6b","n6c","n5a","n5b","n5c","n4a","n4b","n4c","n3b","n2a","n2b","n1a","n1b"].forEach(k=>{const el=$("in_"+k);if(el)el.value=st[k]||0;});}
 
 document.addEventListener("click",e=>{
  const b=e.target.closest(".step");
  if(b){const k=b.dataset.t;st[k]=Math.max(0,(st[k]||0)+(b.dataset.act==="p"?1:-1));const el=$("in_"+k);if(el)el.value=st[k];save();render();return;}
- if(e.target.id==="reset"){let ok=true;try{ok=window.confirm("Обнулить все числа?");}catch(_){}if(ok){st={s1:0,s1b:0,n5a:0,n5b:0,n5c:0,n4a:0,n4b:0,n4c:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};syncInputs();save();render();}return;}
+ if(e.target.id==="reset"){let ok=true;try{ok=window.confirm("Обнулить все числа?");}catch(_){}if(ok){st={s1:0,s1b:0,n6a:0,n6b:0,n6c:0,n5a:0,n5b:0,n5c:0,n4a:0,n4b:0,n4c:0,n3a:0,n3b:0,n2a:0,n2b:0,n1a:0,n1b:0};syncInputs();save();render();}return;}
 });
 document.addEventListener("input",e=>{const el=e.target;if(el.id&&el.id.indexOf("in_")===0){const k=el.id.slice(3);st[k]=Math.max(0,parseInt(el.value)||0);save();render();}});
 
@@ -1058,6 +1131,7 @@ function renderPrepay(d){
  prepayLine("prepayC", d && d.course_3);
  prepayLine("prepayD", d && d.course_4);
  prepayLine("prepayE", d && d.course_5);
+ prepayLine("prepayF", d && d.course_6);
 }
 
 async function pull(){
@@ -1066,8 +1140,8 @@ async function pull(){
   if(!r.ok) throw new Error(r.status);
   const d=await r.json();
   if(d && d.dashboard){
-   ["s1","s1b","n1a","n1b","n2a","n2b","n3a","n3b","n4a","n4b","n4c","n5a","n5b","n5c"].forEach(k=>{const v=d.dashboard[k];if(typeof v==="number")st[k]=v;});
-   [["s1",d.tripwire],["s1b",d.tripwire_2],["B",d.course_1],["A",d.course_2],["C",d.course_3],["D",d.course_4],["E",d.course_5]]
+   ["s1","s1b","n1a","n1b","n2a","n2b","n3a","n3b","n4a","n4b","n4c","n5a","n5b","n5c","n6a","n6b","n6c"].forEach(k=>{const v=d.dashboard[k];if(typeof v==="number")st[k]=v;});
+   [["s1",d.tripwire],["s1b",d.tripwire_2],["B",d.course_1],["A",d.course_2],["C",d.course_3],["D",d.course_4],["E",d.course_5],["F",d.course_6]]
      .forEach(([x,c])=>{if(c&&typeof c.revenue==="number"&&typeof c.paid==="number")FACT[x]={places:c.paid,rev:c.revenue,recv:(typeof c.received==="number"?c.received:null)};});
    syncInputs();render();save();renderPrepay(d);renderToday(d);
    stamp("из GetCourse · обновлено "+(d.updated_at||"")+" МСК");
