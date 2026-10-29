@@ -1,0 +1,43 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Проверка полосы</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#f1edff;--line:#e9e3f6;--ink:#211b37}
+*{box-sizing:border-box}
+body{margin:0;padding:16px 14px 60px;background:radial-gradient(ellipse at 90% 0,#eadfff,transparent 55%),var(--bg);
+     color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+h1{font-size:17px;margin:0 0 4px}
+p.lead{margin:0 0 18px;color:#8a829f;font-size:13px}
+h2{font-size:14px;margin:26px 0 8px}
+.row{display:flex;align-items:flex-start;gap:12px;background:#faf8ff;border:1px solid var(--line);
+     border-radius:14px;padding:13px;margin-bottom:10px}
+.box{background:#fff;padding:14px}
+/* А — ровно то, что было в приложении: высокая белая коробка со скруглением и обрезкой */
+.boxA{border-radius:22px;overflow:hidden;box-shadow:0 10px 40px #291a5d14}
+/* Б — такая же высокая белая коробка, но без скругления и без обрезки */
+.boxB{border-radius:0;overflow:visible}
+/* В — вообще без коробки: содержимое прямо на фоне страницы */
+.boxC{background:none;padding:0}
+</style></head><body>
+<h1>Проверка полосы</h1>
+<p class="lead">Три одинаковых списка в разной обёртке. Пролистай страницу сверху донизу и пришли скриншоты тех мест, где появилась серая полоса.</p>
+
+<h2>А · белая коробка со скруглением и обрезкой</h2>
+<div class="box boxA" id="a"></div>
+
+<h2>Б · белая коробка без скругления</h2>
+<div class="box boxB" id="b"></div>
+
+<h2>В · без коробки, прямо на фоне страницы</h2>
+<div class="box boxC" id="c"></div>
+
+<script>
+try{ var t=window.Telegram&&window.Telegram.WebApp; if(t){t.ready();t.expand();
+  if(t.disableVerticalSwipes)t.disableVerticalSwipes();} }catch(e){}
+var rows='';
+for(var i=1;i<=9;i++) rows+='<div class="row"><span>'+i+'.</span><span>Строка списка номер '+i+
+  ' — текст такой же длины, как шаг цели в приложении, чтобы высота совпадала.</span></div>';
+['a','b','c'].forEach(function(id){document.getElementById(id).innerHTML=rows});
+</script>
+</body></html>
