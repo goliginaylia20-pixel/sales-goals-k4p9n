@@ -283,7 +283,7 @@
   <div class="head">
     <h1>Центр управления</h1>
     <div class="sub">Расписание · продажи · выплаты</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 24 · 6 поток</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 26 · 6 поток первым</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
@@ -340,6 +340,73 @@
 
   <div class="pane" id="pane-sales">
 
+  <!-- STAGE 2 · Основной курс · 6 поток -->
+  <section class="stage">
+    <div class="st-head">
+      <div>
+        <span class="badge ">Ступень 2 · 6 поток</span>
+        <h2>Основной курс · 6 поток</h2>
+        <div class="price">Считаем с 20 октября · эфир 10 ноября</div>
+      </div>
+      <div class="ringwrap">
+        <svg width="104" height="104" style="transform:rotate(-90deg)">
+          <defs><linearGradient id="ggF" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2BC7DE"/><stop offset="0.55" stop-color="#6A5BFF"/><stop offset="1" stop-color="#C740F0"/>
+          </linearGradient></defs>
+          <circle class="ring-bg" cx="52" cy="52" r="42" fill="none" stroke-width="11"></circle>
+          <circle class="ring-fg" id="ringF" cx="52" cy="52" r="42" fill="none" stroke="url(#ggF)" stroke-width="11" stroke-linecap="round"></circle>
+        </svg>
+        <div class="lbl"><b id="ringFpct">0%</b><span>К ОПТИМУМУ</span></div>
+      </div>
+    </div>
+    <div class="crow">
+      <div class="crow-lab">Тариф «Claude» · <b>21 990 ₽</b></div>
+      <div class="crow-ctl">
+        <button class="step" data-act="m" data-t="n6a">−</button>
+        <div class="field"><input type="number" id="in_n6a" min="0" value="0"><span class="lab">мест</span></div>
+        <button class="step" data-act="p" data-t="n6a">+</button>
+      </div>
+    </div>
+    <div class="crow">
+      <div class="crow-lab">Тариф «GPT» · <b>21 990 ₽</b></div>
+      <div class="crow-ctl">
+        <button class="step" data-act="m" data-t="n6b">−</button>
+        <div class="field"><input type="number" id="in_n6b" min="0" value="0"><span class="lab">мест</span></div>
+        <button class="step" data-act="p" data-t="n6b">+</button>
+      </div>
+    </div>
+    <div class="crow">
+      <div class="crow-lab">Тариф «Claude + GPT» · <b>29 990 ₽</b></div>
+      <div class="crow-ctl">
+        <button class="step" data-act="m" data-t="n6c">−</button>
+        <div class="field"><input type="number" id="in_n6c" min="0" value="0"><span class="lab">мест</span></div>
+        <button class="step" data-act="p" data-t="n6c">+</button>
+      </div>
+    </div>
+    <div class="revblock">
+      <div class="k">Места · на счёт после комиссии</div>
+      <div class="v num" id="revF">0 ₽</div>
+      <div class="goal">цель-оптимум ≈ <b id="potF">—</b></div>
+      <div class="prepay" id="prepayF" hidden></div>
+    </div>
+    <div class="goalbar"><div class="gb-track"><div class="gb-fill" id="fillF"></div>
+      <i class="tick" id="tFmin"></i><i class="tick" id="tFopt"></i><i class="tick" id="tFmax"></i></div></div>
+    <div class="tiers">
+      <div class="tier min" id="tierFmin"><div class="tn">Минимум</div><div class="tg num">50</div><div class="tp"></div></div>
+      <div class="tier opt" id="tierFopt"><div class="tn">Оптимум</div><div class="tg num">100</div><div class="tp"></div></div>
+      <div class="tier max" id="tierFmax"><div class="tn">Максимум</div><div class="tg num">150</div><div class="tp"></div></div>
+    </div>
+    <div class="pace"><div class="msg" id="msgF"></div><div class="left" id="paceF"></div></div>
+  </section>
+  <section class="profit">
+    <div class="p-title">Прибыль · 6 поток</div>
+    <div class="p-net num" id="n_F">0 ₽</div>
+    <div class="waterfall">
+      <div class="wf"><span>Сумма заказов</span><b class="num" id="g_F">0 ₽</b></div>
+      <div class="wf minus"><span>Налог 8%</span><b class="num" id="t_F">0 ₽</b></div>
+      <div class="wf minus"><span>Комиссия платёжной системы</span><b class="num" id="c_F">0 ₽</b></div>
+    </div>
+  </section>
   <!-- касса за сегодня: обновляется вместе с остальными цифрами из GetCourse -->
   <section class="today" id="todaycard">
     <div class="tt">Заработано сегодня</div>
@@ -448,73 +515,6 @@
       <div class="wf"><span>Сумма заказов</span><b class="num" id="g_s1">0 ₽</b></div>
       <div class="wf minus"><span>Налог 8%</span><b class="num" id="t_s1">0 ₽</b></div>
       <div class="wf minus"><span>Комиссия платёжной системы</span><b class="num" id="c_s1">0 ₽</b></div>
-    </div>
-  </section>
-  <!-- STAGE 2 · Основной курс · 6 поток -->
-  <section class="stage">
-    <div class="st-head">
-      <div>
-        <span class="badge ">Ступень 2 · 6 поток</span>
-        <h2>Основной курс · 6 поток</h2>
-        <div class="price">Считаем с 20 октября · эфир 10 ноября</div>
-      </div>
-      <div class="ringwrap">
-        <svg width="104" height="104" style="transform:rotate(-90deg)">
-          <defs><linearGradient id="ggF" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#2BC7DE"/><stop offset="0.55" stop-color="#6A5BFF"/><stop offset="1" stop-color="#C740F0"/>
-          </linearGradient></defs>
-          <circle class="ring-bg" cx="52" cy="52" r="42" fill="none" stroke-width="11"></circle>
-          <circle class="ring-fg" id="ringF" cx="52" cy="52" r="42" fill="none" stroke="url(#ggF)" stroke-width="11" stroke-linecap="round"></circle>
-        </svg>
-        <div class="lbl"><b id="ringFpct">0%</b><span>К ОПТИМУМУ</span></div>
-      </div>
-    </div>
-    <div class="crow">
-      <div class="crow-lab">Тариф «Claude» · <b>21 990 ₽</b></div>
-      <div class="crow-ctl">
-        <button class="step" data-act="m" data-t="n6a">−</button>
-        <div class="field"><input type="number" id="in_n6a" min="0" value="0"><span class="lab">мест</span></div>
-        <button class="step" data-act="p" data-t="n6a">+</button>
-      </div>
-    </div>
-    <div class="crow">
-      <div class="crow-lab">Тариф «GPT» · <b>21 990 ₽</b></div>
-      <div class="crow-ctl">
-        <button class="step" data-act="m" data-t="n6b">−</button>
-        <div class="field"><input type="number" id="in_n6b" min="0" value="0"><span class="lab">мест</span></div>
-        <button class="step" data-act="p" data-t="n6b">+</button>
-      </div>
-    </div>
-    <div class="crow">
-      <div class="crow-lab">Тариф «Claude + GPT» · <b>29 990 ₽</b></div>
-      <div class="crow-ctl">
-        <button class="step" data-act="m" data-t="n6c">−</button>
-        <div class="field"><input type="number" id="in_n6c" min="0" value="0"><span class="lab">мест</span></div>
-        <button class="step" data-act="p" data-t="n6c">+</button>
-      </div>
-    </div>
-    <div class="revblock">
-      <div class="k">Места · на счёт после комиссии</div>
-      <div class="v num" id="revF">0 ₽</div>
-      <div class="goal">цель-оптимум ≈ <b id="potF">—</b></div>
-      <div class="prepay" id="prepayF" hidden></div>
-    </div>
-    <div class="goalbar"><div class="gb-track"><div class="gb-fill" id="fillF"></div>
-      <i class="tick" id="tFmin"></i><i class="tick" id="tFopt"></i><i class="tick" id="tFmax"></i></div></div>
-    <div class="tiers">
-      <div class="tier min" id="tierFmin"><div class="tn">Минимум</div><div class="tg num">50</div><div class="tp"></div></div>
-      <div class="tier opt" id="tierFopt"><div class="tn">Оптимум</div><div class="tg num">100</div><div class="tp"></div></div>
-      <div class="tier max" id="tierFmax"><div class="tn">Максимум</div><div class="tg num">150</div><div class="tp"></div></div>
-    </div>
-    <div class="pace"><div class="msg" id="msgF"></div><div class="left" id="paceF"></div></div>
-  </section>
-  <section class="profit">
-    <div class="p-title">Прибыль · 6 поток</div>
-    <div class="p-net num" id="n_F">0 ₽</div>
-    <div class="waterfall">
-      <div class="wf"><span>Сумма заказов</span><b class="num" id="g_F">0 ₽</b></div>
-      <div class="wf minus"><span>Налог 8%</span><b class="num" id="t_F">0 ₽</b></div>
-      <div class="wf minus"><span>Комиссия платёжной системы</span><b class="num" id="c_F">0 ₽</b></div>
     </div>
   </section>
   <!-- STAGE 2 · Основной курс · 5 поток -->
