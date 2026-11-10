@@ -283,7 +283,7 @@
   <div class="head">
     <h1>Центр управления</h1>
     <div class="sub">Расписание · продажи · выплаты</div>
-    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 26 · 6 поток первым</div>
+    <div class="sub" id="verline" style="opacity:.55;font-size:11px">версия 27 · касса, затем 6 поток</div>
     <div class="sub" id="syncline" style="opacity:.7;font-size:12px">цифры из GetCourse · загружаю…</div>
   </div>
 
@@ -339,6 +339,15 @@
   </section>
 
   <div class="pane" id="pane-sales">
+
+  <!-- касса за сегодня: обновляется вместе с остальными цифрами из GetCourse -->
+  <section class="today" id="todaycard">
+    <div class="tt">Заработано сегодня</div>
+    <div class="tv" id="tdrev">—</div>
+    <div class="ts" id="tdsub">загружаю…</div>
+    <div class="tl" id="tdlist"></div>
+    <div class="tf" id="tdfoot"></div>
+  </section>
 
   <!-- STAGE 2 · Основной курс · 6 поток -->
   <section class="stage">
@@ -407,15 +416,6 @@
       <div class="wf minus"><span>Комиссия платёжной системы</span><b class="num" id="c_F">0 ₽</b></div>
     </div>
   </section>
-  <!-- касса за сегодня: обновляется вместе с остальными цифрами из GetCourse -->
-  <section class="today" id="todaycard">
-    <div class="tt">Заработано сегодня</div>
-    <div class="tv" id="tdrev">—</div>
-    <div class="ts" id="tdsub">загружаю…</div>
-    <div class="tl" id="tdlist"></div>
-    <div class="tf" id="tdfoot"></div>
-  </section>
-
   <!-- STAGE 1b · ТРИПВАЙЕР 2.0 (идёт с 12.10.2026, 1490 ₽) -->
   <section class="stage">
     <div class="st-head">
